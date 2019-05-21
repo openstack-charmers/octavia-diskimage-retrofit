@@ -6,6 +6,7 @@ description: |
   load balancer.  For convenience the snap also contains a prebuilt image with
   the upstream default set of image elements enabled.
 confinement: strict
+base: core18
 environment:
   PATH: $SNAP/bin:$PATH
   LC_ALL: C
@@ -20,7 +21,7 @@ parts:
     source-type: git
     source-branch: master
     organize:
-      elements/*: lib/python3.5/site-packages/diskimage_builder/elements/
+      elements/*: lib/python3.6/site-packages/diskimage_builder/elements/
   diskimage-builder:
     plugin: python
     source: https://opendev.org/openstack/diskimage-builder.git
@@ -28,10 +29,10 @@ parts:
     source-branch: master
     override-pull: |
       snapcraftctl pull
-      patch -p1 < ../../../patch/patch-debian-version.patch
+      patch -p1 < ../../../project/patch/patch-debian-version.patch
   qemu:
     source: .
-    source-subdir: qemu-2.5+dfsg
+    source-subdir: qemu-2.11+dfsg
     plugin: autotools
     stage-packages:
       - seabios
@@ -42,14 +43,14 @@ parts:
       - libasound2
       - libasyncns0
       - libbluetooth3
-      - libboost-iostreams1.58.0
-      - libboost-random1.58.0
-      - libboost-system1.58.0
-      - libboost-thread1.58.0
+      - libboost-iostreams1.65.1
+      - libboost-random1.65.1
+      - libboost-system1.65.1
+      - libboost-thread1.65.1
       - libcaca0
       - libfdt1
       - libflac8
-      - libiscsi2
+      - libiscsi7
       - libjpeg-turbo8
       - libnspr4
       - libnss3
@@ -102,6 +103,7 @@ parts:
       - wget
       - dpkg-dev
       - gcc
+      - python2.7-dev
     configflags:
       - --disable-blobs
       - --prefix=/snap/$SNAPCRAFT_PROJECT_NAME/current
@@ -112,10 +114,11 @@ parts:
       - --disable-linux-user
       - --enable-system
       - --target-list=x86_64-softmmu
+      - --python=/usr/bin/python2.7
     override-build: |
-      wget http://archive.ubuntu.com/ubuntu/pool/main/q/qemu/qemu_2.5+dfsg.orig.tar.xz
-      wget http://archive.ubuntu.com/ubuntu/pool/main/q/qemu/qemu_2.5+dfsg-5ubuntu10.36.debian.tar.xz
-      wget http://archive.ubuntu.com/ubuntu/pool/main/q/qemu/qemu_2.5+dfsg-5ubuntu10.36.dsc
+      wget http://archive.ubuntu.com/ubuntu/pool/main/q/qemu/qemu_2.11+dfsg.orig.tar.xz
+      wget http://archive.ubuntu.com/ubuntu/pool/main/q/qemu/qemu_2.11+dfsg-1ubuntu7.13.debian.tar.xz
+      wget http://archive.ubuntu.com/ubuntu/pool/main/q/qemu/qemu_2.11+dfsg-1ubuntu7.13.dsc
       dpkg-source -x qemu_*.dsc
       snapcraftctl build
     organize:
