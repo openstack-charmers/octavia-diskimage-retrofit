@@ -5,7 +5,7 @@ description: |
   Tool to build the ``Amphora`` diskimage used with the OpenStack Octavia
   load balancer.  For convenience the snap also contains a prebuilt image with
   the upstream default set of image elements enabled.
-confinement: strict
+confinement: classic
 base: core18
 environment:
   PATH: $SNAP/bin:$PATH
@@ -14,6 +14,8 @@ grade: devel
 apps:
   disk-image-create:
     command: bin/disk-image-create
+    environment:
+        PYTHONPATH: $SNAP/lib/python3.6/site-packages
 parts:
   octavia:
     plugin: dump
