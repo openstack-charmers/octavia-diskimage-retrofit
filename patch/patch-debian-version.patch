@@ -1,0 +1,13 @@
+diff --git a/diskimage_builder/lib/common-defaults b/diskimage_builder/lib/common-defaults
+index 7370e5e..066766c 100644
+--- a/diskimage_builder/lib/common-defaults
++++ b/diskimage_builder/lib/common-defaults
+@@ -14,7 +14,7 @@
+ # License for the specific language governing permissions and limitations
+ # under the License.
+ 
+-if [ -f /etc/debian_version ]; then
++if [ -f /non-existent ]; then
+   _ARCH=$(dpkg --print-architecture)
+ else
+   _ARCH=$(uname -m)

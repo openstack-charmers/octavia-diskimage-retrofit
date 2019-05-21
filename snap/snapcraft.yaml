@@ -1,0 +1,126 @@
+name: octavia-diskimage-builder
+version: git
+summary: OpenStack Diskimage-builder with Octavia elements
+description: |
+  Tool to build the ``Amphora`` diskimage used with the OpenStack Octavia
+  load balancer.  For convenience the snap also contains a prebuilt image with
+  the upstream default set of image elements enabled.
+confinement: strict
+environment:
+  PATH: $SNAP/bin:$PATH
+  LC_ALL: C
+grade: devel
+apps:
+  disk-image-create:
+    command: bin/disk-image-create
+parts:
+  octavia:
+    plugin: dump
+    source: https://opendev.org/openstack/octavia.git
+    source-type: git
+    source-branch: master
+    organize:
+      elements/*: lib/python3.5/site-packages/diskimage_builder/elements/
+  diskimage-builder:
+    plugin: python
+    source: https://opendev.org/openstack/diskimage-builder.git
+    source-type: git
+    source-branch: master
+    override-pull: |
+      snapcraftctl pull
+      patch -p1 < ../../../patch/patch-debian-version.patch
+  qemu:
+    source: .
+    source-subdir: qemu-2.5+dfsg
+    plugin: autotools
+    stage-packages:
+      - seabios
+      - ipxe-qemu
+      - try:
+        - libnuma1
+        - libspice-server1
+      - libasound2
+      - libasyncns0
+      - libbluetooth3
+      - libboost-iostreams1.58.0
+      - libboost-random1.58.0
+      - libboost-system1.58.0
+      - libboost-thread1.58.0
+      - libcaca0
+      - libfdt1
+      - libflac8
+      - libiscsi2
+      - libjpeg-turbo8
+      - libnspr4
+      - libnss3
+      - libogg0
+      - libopus0
+      - libpixman-1-0
+      - libpulse0
+      - librados2
+      - librbd1
+      - libsdl1.2debian
+      - libsndfile1
+      - libusb-1.0-0
+      - libusbredirparser1
+      - libvorbis0a
+      - libvorbisenc2
+      - libx11-6
+      - libxau6
+      - libxcb1
+      - libxdmcp6
+      - libxext6
+    build-packages:
+      - acpica-tools
+      - libaio-dev
+      - libasound2-dev
+      - libattr1-dev
+      - libbluetooth-dev
+      - libcap-dev
+      - libcap-ng-dev
+      - libcurl4-gnutls-dev
+      - libfdt-dev
+      - gnutls-dev
+      - libiscsi-dev
+      - libncurses5-dev
+      - try: [libnuma-dev]
+      - libpixman-1-dev
+      - libpulse-dev
+      - librados-dev
+      - librbd-dev
+      - libsasl2-dev
+      - libsdl1.2-dev
+      - try: [libspice-server-dev, libspice-protocol-dev]
+      - libusb-1.0-0-dev
+      - libusbredirparser-dev
+      - linux-libc-dev
+      - uuid-dev
+      - xfslibs-dev
+      - libjpeg-dev
+      - zlib1g-dev
+      - libpng-dev
+      - wget
+      - dpkg-dev
+      - gcc
+    configflags:
+      - --disable-blobs
+      - --prefix=/snap/$SNAPCRAFT_PROJECT_NAME/current
+      - --localstatedir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common
+      - --sysconfdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common
+      - --extra-cflags=-DCONFIG_QEMU_DATAPATH='"/snap/$SNAPCRAFT_PROJECT_NAME/current/share/qemu:/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/seabios:/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/ipxe/qemu"'
+      - --disable-user
+      - --disable-linux-user
+      - --enable-system
+      - --target-list=x86_64-softmmu
+    override-build: |
+      wget http://archive.ubuntu.com/ubuntu/pool/main/q/qemu/qemu_2.5+dfsg.orig.tar.xz
+      wget http://archive.ubuntu.com/ubuntu/pool/main/q/qemu/qemu_2.5+dfsg-5ubuntu10.36.debian.tar.xz
+      wget http://archive.ubuntu.com/ubuntu/pool/main/q/qemu/qemu_2.5+dfsg-5ubuntu10.36.dsc
+      dpkg-source -x qemu_*.dsc
+      snapcraftctl build
+    organize:
+      # Hack to shift installed qemu back to root of snap
+      # required to ensure that pathing to files etc works at
+      # runtime
+      # * is not used to avoid directory merge conflicts
+      snap/octavia-diskimage-builder/current/: ./
