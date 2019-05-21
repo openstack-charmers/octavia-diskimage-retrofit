@@ -8,13 +8,14 @@ description: |
 confinement: classic
 base: core18
 environment:
-  PATH: $SNAP/bin:$PATH
+  PATH: $SNAP/usr/sbin:$SNAP/bin:$PATH
   LC_ALL: C
 grade: devel
 apps:
   disk-image-create:
     command: bin/disk-image-create
     environment:
+        DEBOOTSTRAP_DIR: $SNAP/usr/share/debootstrap
         PYTHONPATH: $SNAP/lib/python3.6/site-packages
 parts:
   octavia:
@@ -31,7 +32,13 @@ parts:
     source-branch: master
     override-pull: |
       snapcraftctl pull
-      patch -p1 < ../../../project/patch/patch-debian-version.patch
+      patch -p1 < ../../../project/patch/patch-diskimage-builder-debian-version.patch
+      patch -p1 < ../../../project/patch/patch-diskimage-builder-elements-debootstrap-sudo-path.patch
+  debbootstrap:
+    plugin: make
+    source:  https://git.launchpad.net/ubuntu/+source/debootstrap
+    source-type: git
+    source-branch: ubuntu/devel
   qemu:
     source: .
     source-subdir: qemu-2.11+dfsg
