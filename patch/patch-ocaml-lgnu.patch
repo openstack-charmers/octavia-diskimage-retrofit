@@ -1,0 +1,22 @@
+diff --git a/ocaml/Makefile.am b/ocaml/Makefile.am
+index 57ecd608b..5d5cc99ee 100644
+--- a/ocaml/Makefile.am
++++ b/ocaml/Makefile.am
+@@ -69,13 +69,15 @@ stamp-mlguestfs: libguestfsocaml.a $(guestfs_cmm)
+ 	  $(libguestfsocaml_a_OBJECTS) guestfs.cmo \
+ 	  $(LDFLAGS) \
+ 	  $(LTLIBINTL) \
+-	  -L../lib/.libs -lguestfs
++	  -L../lib/.libs -lguestfs \
++	  -L../gnulib/lib/.libs -lgnu
+ if HAVE_OCAMLOPT
+ 	$(OCAMLMKLIB) -o mlguestfs \
+ 	  $(libguestfsocaml_a_OBJECTS) guestfs.cmx \
+ 	  $(LDFLAGS) \
+ 	  $(LTLIBINTL) \
+-	  -L../lib/.libs -lguestfs
++	  -L../lib/.libs -lguestfs \
++	  -L../gnulib/lib/.libs -lgnu
+ endif
+ 	touch $@
+ 
