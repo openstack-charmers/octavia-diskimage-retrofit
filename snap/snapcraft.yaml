@@ -13,6 +13,8 @@ environment:
 apps:
   virt-dib:
     command: bin/virt-dib
+    plugs:
+      - network-bind
 parts:
   octavia:
     after: [diskimage-builder]
@@ -112,8 +114,9 @@ parts:
       rm -f /snap/$SNAPCRAFT_PROJECT_NAME/current
       rmdir /snap/$SNAPCRAFT_PROJECT_NAME
     override-prime: |
-      mkdir lib/guestfs
+      mkdir -p lib/guestfs
       env -i PATH=/usr/sbin:/usr/bin:/sbin:/bin libguestfs-make-fixed-appliance $SNAPCRAFT_PRIME/lib/guestfs
+      chmod 0644 lib/guestfs/kernel
       snapcraftctl prime
     configflags:
       - --disable-silent-rules
