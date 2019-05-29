@@ -29,6 +29,9 @@ parts:
     source: https://opendev.org/openstack/diskimage-builder.git
     source-type: git
     source-branch: master
+    override-build: |
+      patch -p1 < ../../../project/patch/patch-diskimage-builder-python3.patch
+      snapcraftctl build
   qemu:
     source: https://git.launchpad.net/ubuntu/+source/qemu
     source-type: git
