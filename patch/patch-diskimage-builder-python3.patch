@@ -69,11 +69,11 @@ index b6e59f28..4f13d765 100755
  # dib-lint indent requirements causes issue with pep8
  
 diff --git a/diskimage_builder/elements/svc-map/bin/svc-map b/diskimage_builder/elements/svc-map/bin/svc-map
-index 2df6ba91..addcb42d 100755
+index ce04ee05..addcb42d 100755
 --- a/diskimage_builder/elements/svc-map/bin/svc-map
 +++ b/diskimage_builder/elements/svc-map/bin/svc-map
 @@ -1,4 +1,4 @@
--#!/usr/bin/env python
+-#!/usr/local/bin/dib-python
 +#!/usr/bin/env python3
  
  # Copyright 2012 Hewlett-Packard Development Company, L.P.
