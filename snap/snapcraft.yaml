@@ -9,7 +9,7 @@ grade: devel
 environment:
   LD_LIBRARY_PATH: $SNAP/lib:$SNAP/lib/$SNAPCRAFT_ARCH_TRIPLET:$SNAP/usr/lib:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET
   PATH: $SNAP/usr/sbin:$SNAP/usr/bin:$SNAP/sbin:$SNAP/bin:$PATH
-  LIBGUESTFS_PATH: $SNAP/lib/guestfs
+  LIBGUESTFS_PATH: $SNAP/usr/local/lib/guestfs/appliance
 apps:
   virt-dib:
     command: bin/virt-dib
@@ -136,13 +136,13 @@ parts:
       rm -f /snap/$SNAPCRAFT_PROJECT_NAME/current
       rmdir /snap/$SNAPCRAFT_PROJECT_NAME
     override-prime: |
-      mkdir -p lib/guestfs
+      mkdir -p usr/local/lib/guestfs/appliance
       mkdir -p /snap/$SNAPCRAFT_PROJECT_NAME
       ln -sf $SNAPCRAFT_STAGE /snap/$SNAPCRAFT_PROJECT_NAME/current
-      env -i LIBGUESTFS_PATH=$SNAPCRAFT_STAGE/lib/guestfs LD_LIBRARY_PATH=$SNAPCRAFT_STAGE/lib:$SNAPCRAFT_STAGE/lib/$SNAPCRAFT_ARCH_TRIPLET:$SNAPCRAFT_STAGE/usr/lib:$SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET PATH=$SNAPCRAFT_STAGE/usr/sbin:$SNAPCRAFT_STAGE/usr/bin:$SNAPCRAFT_STAGE/sbin:$SNAPCRAFT_STAGE/bin:/usr/sbin:/usr/bin:/sbin:/bin libguestfs-make-fixed-appliance $SNAPCRAFT_PRIME/lib/guestfs
+      env -i LIBGUESTFS_PATH=$SNAPCRAFT_STAGE/lib/guestfs LD_LIBRARY_PATH=$SNAPCRAFT_STAGE/lib:$SNAPCRAFT_STAGE/lib/$SNAPCRAFT_ARCH_TRIPLET:$SNAPCRAFT_STAGE/usr/lib:$SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET PATH=$SNAPCRAFT_STAGE/usr/sbin:$SNAPCRAFT_STAGE/usr/bin:$SNAPCRAFT_STAGE/sbin:$SNAPCRAFT_STAGE/bin:/usr/sbin:/usr/bin:/sbin:/bin libguestfs-make-fixed-appliance $SNAPCRAFT_PRIME/usr/local/lib/guestfs/appliance
       rm -f /snap/$SNAPCRAFT_PROJECT_NAME/current
       rmdir /snap/$SNAPCRAFT_PROJECT_NAME
-      chmod 0644 lib/guestfs/kernel
+      chmod 0644 usr/local/lib/guestfs/appliance/kernel
       snapcraftctl prime
     configflags:
       - --disable-silent-rules
