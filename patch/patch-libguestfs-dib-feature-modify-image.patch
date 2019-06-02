@@ -1,0 +1,116 @@
+diff --git a/dib/dib.ml b/dib/dib.ml
+index 94ad3003a..e1d564540 100644
+--- a/dib/dib.ml
++++ b/dib/dib.ml
+@@ -737,7 +737,7 @@ let main () =
+         Filename.temp_file ~temp_dir:tmpdir "image." "" in
+     let fn = output_filename fn fmt in
+     (* Produce the output image. *)
+-    g#disk_create fn fmt cmdline.size;
++    (* g#disk_create fn fmt cmdline.size; *)
+     g#add_drive ~readonly:false ~format:fmt fn;
+ 
+     (* Helper drive for elements and binaries. *)
+@@ -812,7 +812,7 @@ let main () =
+      * environment.
+      *)
+     let run_losetup device =
+-      let lines = g#debug "sh" [| "losetup"; "--show"; "-f"; device |] in
++      let lines = g#debug "sh" [| "losetup"; "--show"; "-Pf"; device |] in
+       let lines = String.nsplit "\n" lines in
+       let lines = List.filter ((<>) "") lines in
+       (match lines with
+@@ -837,8 +837,6 @@ let main () =
+     do_run_hooks_noout ~sysroot:Out ~new_wd hook
+   and run_hook_in hook =
+     do_run_hooks_noout ~sysroot:In hook
+-  and run_hook_subroot hook =
+-    do_run_hooks_noout ~sysroot:Subroot hook
+   and do_run_hooks_noout ~sysroot ?(new_wd = "") hook =
+     ignore (run_hook ~sysroot ~blockdev ~new_wd g hook)
+   and run_hook_host hook =
+@@ -855,48 +853,7 @@ let main () =
+   checked_umount_all ();
+   flush_all ();
+ 
+-  message (f_"Setting up the destination root");
+-
+-  (* Create and mount the target filesystem. *)
+-  let mkfs_options =
+-    match cmdline.mkfs_options with
+-    | None -> []
+-    | Some o -> [ o ] in
+-  let mkfs_options =
+-    [ "-t"; cmdline.fs_type ] @
+-    (match cmdline.fs_type with
+-    | "ext4" ->
+-      (* Very conservative to handle images being resized a lot
+-       * Without -J option specified, default journal size will be set to 32M
+-       * and online resize will be failed with error of needs too many credits.
+-       *)
+-      [ "-i"; "4096"; "-J"; "size=64" ]
+-    | _ -> []
+-    ) @ mkfs_options @ [ blockdev ] in
+-  ignore (g#debug "sh" (Array.of_list ([ "mkfs" ] @ mkfs_options)));
+-  g#set_label blockdev root_label;
+-  if String.is_prefix cmdline.fs_type "ext" then
+-    g#set_uuid blockdev rootfs_uuid;
+-  g#mount blockdev "/";
+-  g#mkmountpoint "/tmp";
+-  mount_aux ();
+-  g#mkdir "/subroot";
+-
+-  run_hook_subroot "root.d";
+-
+-  g#sync ();
+-  g#umount "/tmp/in_target.aux/perm";
+-  g#umount "/tmp/in_target.aux";
+-  g#rm_rf "/tmp";
+-  let subroot_items =
+-    let l = Array.to_list (g#ls "/subroot") in
+-    let l_lost_plus_found, l = List.partition ((=) "lost+found") l in
+-    if l_lost_plus_found <> [] then (
+-      g#rm_rf "/subroot/lost+found";
+-    );
+-    l in
+-  List.iter (fun x -> g#mv ("/subroot/" ^ x) ("/" ^ x)) subroot_items;
+-  g#rmdir "/subroot";
++  g#mount (blockdev^"p1") "/";
+   (* Check /tmp exists already. *)
+   ignore (g#is_dir "/tmp");
+   mount_aux ();
+@@ -918,7 +875,7 @@ let main () =
+   g#sync ();
+   checked_umount_all ();
+   flush_all ();
+-  g#mount blockdev "/";
++  g#mount (blockdev^"p1") "/";
+   (* Check /tmp/in_target.aux still exists. *)
+   ignore (g#is_dir "/tmp/in_target.aux");
+   g#mount "/dev/sdb" "/tmp/in_target.aux";
+@@ -944,7 +901,7 @@ let main () =
+    *)
+   checked_umount_all ();
+   flush_all ();
+-  g#mount blockdev "/";
++  g#mount (blockdev^"p1") "/";
+   Array.iter (fun x -> g#rm_rf ("/tmp/" ^ x)) (g#ls "/tmp");
+   (* Truncate /var/log files in preparation for first boot. *)
+   truncate_recursive g "/var/log";
+diff --git a/dib/elements.ml b/dib/elements.ml
+index 5a904baef..7594cef25 100644
+--- a/dib/elements.ml
++++ b/dib/elements.ml
+@@ -159,8 +159,10 @@ let load_dependencies elements loaded_elements =
+     error (f_"following elements are already provided by another element:\n%s")
+       (Buffer.contents buf)
+   );
+-  if not (StringSet.mem "operating-system" !provided) then
+-    error (f_"please include an operating system element");
++  (*
++   * if not (StringSet.mem "operating-system" !provided) then
++   *   error (f_"please include an operating system element");
++   *)
+   StringSet.diff !final !provided
+ 
+ let copy_element element destdir blacklist =

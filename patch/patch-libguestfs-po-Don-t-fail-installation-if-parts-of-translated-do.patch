@@ -1,0 +1,50 @@
+From: Hilko Bengen <bengen@debian.org>
+Date: Tue, 18 Oct 2016 12:35:28 +0200
+Subject: po: Don't fail installation if parts of translated documentation are
+ missing
+
+---
+ po/Makefile.am | 15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
+
+diff --git a/po/Makefile.am b/po/Makefile.am
+index 4b59148..6dcfdc5 100644
+--- a/po/Makefile.am
++++ b/po/Makefile.am
+@@ -25,9 +25,9 @@ MSGID_BUGS_ADDRESS = https://bugzilla.redhat.com/enter_bug.cgi?component=libgues
+ # Don't use LINGUAS (uppercase) as Gentoo defines it (RHBZ#804464).
+ linguas     := cs de en_GB es eu fr gu hi ja kn ml mr nl or pa pl ru ta te tg uk zh_CN
+ 
+-POTFILES    := $(shell $(SED) 's,^,$(top_srcdir)/,' $(srcdir)/POTFILES)
+-POTFILES_PL := $(shell $(SED) 's,^,$(top_srcdir)/,' $(srcdir)/POTFILES-pl)
+-POTFILES_ML := $(shell $(SED) 's,^,$(top_srcdir)/,' $(srcdir)/POTFILES-ml)
++POTFILES    := $(shell $(SED) 's,^,$(top_srcdir)/,' $(srcdir)/POTFILES | xargs stat -c %n 2>/dev/null)
++POTFILES_PL := $(shell $(SED) 's,^,$(top_srcdir)/,' $(srcdir)/POTFILES-pl | xargs stat -c %n 2>/dev/null)
++POTFILES_ML := $(shell $(SED) 's,^,$(top_srcdir)/,' $(srcdir)/POTFILES-ml | xargs stat -c %n 2>/dev/null)
+ POFILES     := $(linguas:%=%.po)
+ GMOFILES    := $(linguas:%=%.gmo)
+ 
+@@ -63,8 +63,7 @@ XGETTEXT_ARGS = \
+ 	--copyright-holder='$(COPYRIGHT_HOLDER)' \
+ 	--package-name="$(PACKAGE_NAME)" \
+ 	--package-version="$(PACKAGE_VERSION)" \
+-	--msgid-bugs-address="$(MSGID_BUGS_ADDRESS)" \
+-	--directory=$(top_srcdir)
++	--msgid-bugs-address="$(MSGID_BUGS_ADDRESS)"
+ 
+ # For explanation, see
+ # http://mingw-users.1079350.n2.nabble.com/Getting-rid-of-xgettext-s-quot-CHARSET-quot-warning-td5620533.html
+@@ -79,11 +78,9 @@ if HAVE_OCAML_GETTEXT
+ 	 \
+ 	$(FIX_CHARSET) $@-t
+ endif
+-	$(XGETTEXT) -j -o $@-t $(XGETTEXT_ARGS) \
+-	  --files-from=$(abs_srcdir)/POTFILES
++	$(XGETTEXT) -j -o $@-t $(XGETTEXT_ARGS) $(POTFILES)
+ 	$(FIX_CHARSET) $@-t
+-	$(XGETTEXT) -j -o $@-t $(XGETTEXT_ARGS) --language=Perl \
+-	  --files-from=$(abs_srcdir)/POTFILES-pl
++	$(XGETTEXT) -j -o $@-t $(XGETTEXT_ARGS) --language=Perl $(POTFILES_PL)
+ 	mv $@-t $@
+ 
+ %.po: $(DOMAIN).pot

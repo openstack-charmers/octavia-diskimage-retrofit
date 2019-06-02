@@ -1,0 +1,5 @@
+#!/bin/sh -e
+
+# We need our own tmp directory for fuse-support
+mkdir -p $SNAP_COMMON/tmp
+chmod 1777 $SNAP_COMMON/tmp

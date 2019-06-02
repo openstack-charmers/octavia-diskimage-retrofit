@@ -10,20 +10,32 @@ environment:
   LD_LIBRARY_PATH: $SNAP/lib:$SNAP/lib/$SNAPCRAFT_ARCH_TRIPLET:$SNAP/usr/lib:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET
   PATH: $SNAP/usr/sbin:$SNAP/usr/bin:$SNAP/sbin:$SNAP/bin:$PATH
   LIBGUESTFS_PATH: $SNAP/usr/local/lib/guestfs/appliance
+  TMPDIR: $SNAP_COMMON/tmp
 apps:
-  virt-dib:
-    command: bin/virt-dib
+  octavia-diskimage-retrofit:
+    command: bin/retrofit.sh
     plugs:
+      - fuse-support
+      - kvm
       - network-bind
 parts:
-  octavia:
-    after: [diskimage-builder]
+  retrofit:
+    plugin: dump
+    source: src/retrofit
+    organize:
+      retrofit.sh: bin/retrofit.sh
+  local-elements:
+    plugin: dump
+    source: src
+    organize: 
+      elements/*: usr/local/lib/elements/
+  octavia-elements:
     plugin: dump
     source: https://opendev.org/openstack/octavia.git
     source-type: git
     source-branch: master
     organize:
-      elements/*: lib/python3.6/site-packages/diskimage_builder/elements/
+      elements/*: usr/local/lib/elements/
   diskimage-builder:
     plugin: python
     source: https://opendev.org/openstack/diskimage-builder.git
@@ -110,26 +122,43 @@ parts:
   supermin:
     source: https://github.com/libguestfs/supermin.git
     source-type: git
-    source-branch: master
+    source-branch: v5.1.20
     plugin: autotools
     override-build: |
       ./bootstrap
+      ./autogen.sh
+      make -C init -j6 CC=musl-gcc
       snapcraftctl build
     build-packages:
       - e2fslibs-dev
-  libguestfs:
-    after: [qemu,supermin]
-    source: https://git.launchpad.net/ubuntu/+source/libguestfs
+      - gawk
+      - ocaml-nox
+      - perl-doc
+      - musl-tools
+  fuse:
+    source: https://git.launchpad.net/ubuntu/+source/fuse
     source-type: git
     source-branch: ubuntu/bionic
     plugin: autotools
-    build-environment:
-      - PYTHON: /usr/bin/python3
-      - QEMU: /snap/$SNAPCRAFT_PROJECT_NAME/current/bin/qemu-system-x86_64
     override-build: |
       dpkg-source --before-build .
+      autoreconf
+      snapcraftctl build
+  libguestfs:
+    after: [fuse,qemu,supermin]
+    source: https://github.com/libguestfs/libguestfs.git
+    source-type: git
+    source-branch: v1.40.2
+    plugin: autotools
+    build-environment:
+      - PYTHON: /snap/$SNAPCRAFT_PROJECT_NAME/current/usr/bin/python3
+      - QEMU: /snap/$SNAPCRAFT_PROJECT_NAME/current/bin/qemu-system-x86_64
+    override-build: |
+      patch -p1 < ../../../project/patch/patch-libguestfs-po-Don-t-fail-installation-if-parts-of-translated-do.patch
       patch -p1 < ../../../project/patch/patch-ocaml-lgnu.patch
       patch -p1 < ../../../project/patch/patch-ocaml-examples-gnulib.patch
+      patch -p1 < ../../../project/patch/patch-libguestfs-dib-feature-modify-image.patch
+      patch -p1 < ../../../project/patch/patch-libguestfs-appliance-init-resolvconf.patch
       mkdir -p /snap/$SNAPCRAFT_PROJECT_NAME
       ln -sf $SNAPCRAFT_STAGE /snap/$SNAPCRAFT_PROJECT_NAME/current
       snapcraftctl build
@@ -159,20 +188,108 @@ parts:
       - --disable-ruby
       - --without-libvirt
     stage-packages:
-      - libfuse2
       - libmagic1
       - uuid-runtime
+      - libjansson4
     build-packages:
       - bison
-      - cpio
       - flex
-      - genisoimage
       - gperf
       - libaugeas-dev
       - gettext
-      - libfuse-dev
       - libmagic-dev
       - libreadline-dev
       - libyajl-dev
       - ocaml-nox
+      - libgettext-ocaml-dev
       - python3-all-dev
+      - libjansson-dev
+      - libhivex-ocaml-dev
+      - perl-doc
+      - bsdmainutils
+      - btrfs-tools
+      - cryptsetup
+      - dash
+      - extlinux
+      - genisoimage
+      - gfs2-utils
+      - grub2-common
+      - hfsplus
+      - iproute2
+      - iputils-ping
+      - iputils-arping
+      - iputils-tracepath
+      - isc-dhcp-client
+      - ldmtool
+      - libaugeas0
+      - libc-bin
+      - libcap2
+      - libhivex0
+      - libjansson4
+      - libpcre3
+      - libsystemd0
+      - libsystemd-dev
+      - libtirpc1
+      - libyara3
+      - linux-image-kvm
+      - mtools
+      - nilfs-tools
+      - ntfs-3g
+      - openssh-client
+      - reiserfsprogs
+      - sysvinit-utils
+      - systemd
+      - vim-tiny
+      - xz-utils
+      - zfs-fuse
+      - uuid-runtime
+      - acl
+      - attr
+      - bash
+      - binutils
+      - btrfs-progs
+      - bzip2
+      - coreutils
+      - cpio
+      - diffutils
+      - dosfstools
+      - e2fsprogs
+      - f2fs-tools
+      - file
+      - findutils
+      - gawk
+      - gdisk
+      - grep
+      - gzip
+      - jfsutils
+      - kmod
+      - less
+      - libxml2
+      - lsof
+      - lsscsi
+      - lvm2
+      - lzop
+      - mdadm
+      - module-init-tools
+      - parted
+      - pciutils
+      - procps
+      - psmisc
+      - rsync
+      - scrub
+      - sed
+      - sleuthkit
+      - squashfs-tools
+      - strace
+      - syslinux
+      - tar
+      - udev
+      - util-linux
+      - xfsprogs
+      - zerofree
+      - qemu-utils
+      - curl
+      - kpartx
+      - debootstrap
+      - exfat-fuse
+      - exfat-utils
