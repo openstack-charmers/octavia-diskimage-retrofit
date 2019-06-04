@@ -124,6 +124,10 @@ parts:
     source-type: git
     source-branch: v5.1.20
     plugin: autotools
+    override-pull: |
+      git clone https://github.com/libguestfs/supermin.git .
+      patch -p1 < ../../../project/patch/patch-supermin-gnulib-submodule-url.patch
+      git submodule update --recursive --force
     override-build: |
       ./bootstrap
       ./autogen.sh
