@@ -1,5 +1,5 @@
 diff --git a/dib/dib.ml b/dib/dib.ml
-index 94ad3003a..e1d564540 100644
+index 94ad3003a..c57ac63b1 100644
 --- a/dib/dib.ml
 +++ b/dib/dib.ml
 @@ -737,7 +737,7 @@ let main () =
@@ -20,16 +20,7 @@ index 94ad3003a..e1d564540 100644
        let lines = String.nsplit "\n" lines in
        let lines = List.filter ((<>) "") lines in
        (match lines with
-@@ -837,8 +837,6 @@ let main () =
-     do_run_hooks_noout ~sysroot:Out ~new_wd hook
-   and run_hook_in hook =
-     do_run_hooks_noout ~sysroot:In hook
--  and run_hook_subroot hook =
--    do_run_hooks_noout ~sysroot:Subroot hook
-   and do_run_hooks_noout ~sysroot ?(new_wd = "") hook =
-     ignore (run_hook ~sysroot ~blockdev ~new_wd g hook)
-   and run_hook_host hook =
-@@ -855,48 +853,7 @@ let main () =
+@@ -855,53 +855,16 @@ let main () =
    checked_umount_all ();
    flush_all ();
  
@@ -79,7 +70,16 @@ index 94ad3003a..e1d564540 100644
    (* Check /tmp exists already. *)
    ignore (g#is_dir "/tmp");
    mount_aux ();
-@@ -918,7 +875,7 @@ let main () =
+   g#ln_s "in_target.aux/hooks" "/tmp/in_target.d";
+ 
++  g#ln_s "/sysroot" "/subroot";
++  run_hook_subroot "root.d";
++  g#rm_rf "/subroot";
++
+   run_hook_host "extra-data.d";
+ 
+   run_hook_in "pre-install.d";
+@@ -918,7 +881,7 @@ let main () =
    g#sync ();
    checked_umount_all ();
    flush_all ();
@@ -88,7 +88,7 @@ index 94ad3003a..e1d564540 100644
    (* Check /tmp/in_target.aux still exists. *)
    ignore (g#is_dir "/tmp/in_target.aux");
    g#mount "/dev/sdb" "/tmp/in_target.aux";
-@@ -944,7 +901,7 @@ let main () =
+@@ -944,7 +907,7 @@ let main () =
     *)
    checked_umount_all ();
    flush_all ();
