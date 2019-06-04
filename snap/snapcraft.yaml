@@ -149,7 +149,7 @@ parts:
       autoreconf
       snapcraftctl build
   libguestfs:
-    after: [fuse,qemu,supermin]
+    after: [diskimage-builder,fuse,qemu,supermin]
     source: https://github.com/libguestfs/libguestfs.git
     source-type: git
     source-branch: v1.40.2
