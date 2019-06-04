@@ -44,7 +44,8 @@ virt-dib -vvv -xxxx \
 	 --extra-packages initramfs-tools \
 	 dpkg debian-networking ubuntu-cloud-archive \
 	 haproxy-octavia rebind-sshd no-resolvconf amphora-agent \
-	 sos keepalived-octavia ipvsadmin pip-cache certs-ramfs
+	 sos keepalived-octavia ipvsadmin pip-cache certs-ramfs \
+	 ubuntu-amphora-agent
 
 virt-sparsify --in-place $TEMP_IMAGE_FILE
 qemu-img convert -O qcow2 $TEMP_IMAGE_FILE $OUTPUT_IMAGE

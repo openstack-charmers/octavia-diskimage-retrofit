@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# Workaround for LP: #XXX
+chmod 2750 /etc/octavia
+sed -i 's/CONFIG_FILE=.*$/CONFIG_FILE=\/etc\/octavia\/amphora-agent.conf/' /etc/init.d/amphora-agent
