@@ -137,8 +137,12 @@ parts:
       - e2fslibs-dev
       - gawk
       - ocaml-nox
+      - ocaml-findlib
       - perl-doc
       - musl-tools
+      - dpkg-dev
+      - librpm-dev
+      - cpio
   fuse:
     source: https://git.launchpad.net/ubuntu/+source/fuse
     source-type: git
