@@ -83,7 +83,6 @@ parts:
       - --disable-spice
       - --disable-curses
       - --enable-seccomp
-      - --enable-xen
       - --enable-xfsctl
       - --enable-kvm
       - --enable-vhost-net
@@ -108,6 +107,14 @@ parts:
       - libpixman-1-dev
       - python-all-dev
       - libglib2.0-dev
+      - on amd64:
+        - libxen-dev
+      - on arm64:
+        - libxen-dev
+      - on armhf:
+        - libxen-dev
+      - on i386:
+        - libxen-dev
     stage-packages:
       - seabios
       - ipxe-qemu
@@ -115,10 +122,17 @@ parts:
       - libnuma1
       - libaio1
       - libcurl3-gnutls
-      - libxen-dev
       - libcapstone3
       - libfdt1
       - libpixman-1-0
+      - on amd64:
+        - libxen-4.9
+      - on arm64:
+        - libxen-4.9
+      - on armhf:
+        - libxen-4.9
+      - on i386:
+        - libxen-4.9
   supermin:
     source: https://github.com/libguestfs/supermin.git
     source-type: git
