@@ -56,7 +56,7 @@ parts:
       - --extra-cflags=-g -O2 -fdebug-prefix-map=/home/ubuntu/qemu-2.11+dfsg=. -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -DCONFIG_QEMU_DATAPATH='"/snap/$SNAPCRAFT_PROJECT_NAME/current/share/qemu:/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/seabios:/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/ipxe/qemu"' -DVENDOR_UBUNTU
       - --extra-ldflags=-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,--as-needed
       - --sysconfdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common
-      - --libdir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/x86_64-linux-gnu
+      - --libdir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/$SNAPCRAFT_ARCH_TRIPLET
       - --libexecdir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/qemu
       - --localstatedir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common
       - --disable-blobs
@@ -160,7 +160,6 @@ parts:
     plugin: autotools
     build-environment:
       - PYTHON: /snap/$SNAPCRAFT_PROJECT_NAME/current/usr/bin/python3
-      - QEMU: /snap/$SNAPCRAFT_PROJECT_NAME/current/bin/qemu-system-x86_64
     override-build: |
       patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-po-Don-t-fail-installation-if-parts-of-translated-do.patch
       patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-ocaml-lgnu.patch
@@ -169,7 +168,7 @@ parts:
       patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-appliance-init-resolvconf.patch
       mkdir -p /snap/$SNAPCRAFT_PROJECT_NAME
       ln -sf $SNAPCRAFT_STAGE /snap/$SNAPCRAFT_PROJECT_NAME/current
-      snapcraftctl build
+      env QEMU=$(dpkg-architecture -qDEB_HOST_GNU_CPU | sed -r -e 's,i[456]86,i386,' -e 's,sparc.*,sparc64,' -e 's,powerpc(64.*)?,ppc64,' -e 's,arm.*,arm,') snapcraftctl build
       rm -f /snap/$SNAPCRAFT_PROJECT_NAME/current
       rmdir /snap/$SNAPCRAFT_PROJECT_NAME
     override-prime: |
@@ -218,10 +217,8 @@ parts:
       - btrfs-tools
       - cryptsetup
       - dash
-      - extlinux
       - genisoimage
       - gfs2-utils
-      - grub2-common
       - hfsplus
       - iproute2
       - iputils-ping
@@ -248,7 +245,6 @@ parts:
       - systemd
       - vim-tiny
       - xz-utils
-      - zfs-fuse
       - uuid-runtime
       - acl
       - attr
@@ -288,7 +284,6 @@ parts:
       - sleuthkit
       - squashfs-tools
       - strace
-      - syslinux
       - tar
       - udev
       - util-linux
@@ -300,3 +295,21 @@ parts:
       - debootstrap
       - exfat-fuse
       - exfat-utils
+      - dpkg-dev
+      - on amd64:
+        - linux-image-virtual
+        - syslinux
+        - extlinux
+        - zfs-fuse
+      - on arm64:
+        - linux-image-virtual
+      - on i386:
+        - linux-image-virtual
+        - syslinux
+        - extlinux
+        - zfs-fuse
+      - on ppc64el:
+        - linux-image-virtual
+        - zfs-fuse
+      - on s390x:
+        - linux-image-virtual

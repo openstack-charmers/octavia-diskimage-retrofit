@@ -1,9 +1,6 @@
 ---
 sudo: required
 dist: xenial
-env:
- - ENV=bashate
- - ENV=snapcraft
 language: python
 install:
   - pip install tox-travis
@@ -11,18 +8,5 @@ install:
 env:
  - ENV=bashate
  - ENV=inspect
- - ENV=build-and-test
-comment: |
-  install dependencies in script phase saving time on simpler test environments
-  sudo back to ourself to activate lxd group membership executable search path
 script:
- - if [ $ENV = 'build-and-test' ]; then
-     sudo apt remove -y --purge lxd lxd-client;
-     sudo snap install lxd;
-     sudo sh -c 'echo PATH=/snap/bin:$PATH >> /etc/environment';
-     sudo lxd waitready;
-     sudo lxd init --auto;
-     sudo usermod -a -G lxd travis;
-   fi
- - echo "export PATH=$PATH;cd $(pwd)" > $HOME/saved_path
- - sudo su - travis -c "source $HOME/saved_path; tox -c tox.ini -e $ENV";
+ - tox -e $ENV
