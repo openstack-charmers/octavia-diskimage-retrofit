@@ -166,6 +166,14 @@ parts:
       dpkg-source --before-build .
       autoreconf
       snapcraftctl build
+    override-stage: |
+      snapcraftctl stage
+      chmod 0755 bin/fusermount
+    filesets:
+      exclude:
+        - -dev
+    stage:
+      - $exclude
   libguestfs:
     after: [diskimage-builder,fuse,qemu,supermin]
     source: https://github.com/libguestfs/libguestfs.git
