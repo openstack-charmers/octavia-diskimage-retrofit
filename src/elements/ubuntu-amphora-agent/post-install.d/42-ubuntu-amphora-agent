@@ -2,7 +2,8 @@
 
 # Workaround for LP: #1831642
 chmod 2750 /etc/octavia
-sed -i 's/CONFIG_FILE=.*$/CONFIG_FILE=\/etc\/octavia\/amphora-agent.conf/' /etc/init.d/amphora-agent
+sed -i 's/CONFIG_FILE=.*$/CONFIG_FILE=\/etc\/octavia\/amphora-agent.conf/' \
+    /etc/init.d/amphora-agent
 
 touch /var/log/amphora-agent.log
 chmod 0640 /var/log/amphora-agent.log
@@ -17,3 +18,4 @@ cat > /etc/logrotate.d/amphora-agent <<EOF
     delaycompress
     copytruncate
 }
+EOF

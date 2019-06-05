@@ -31,7 +31,7 @@ echo $DISTRO_NAME > /etc/hostname
 # handle the interfaces dynamically.
 if [[ "${DIB_APT_MINIMAL_CREATE_INTERFACES:-1}" -eq "1" ]]; then
     mkdir -p /etc/network/interfaces.d
-    if ! grep -E -q '^source(|-directory) /etc/network/interfaces.d/\*' /etc/network/interfaces; then
+    if ! grep -E -q '^source(|-directory) /etc/network/interfaces.d/\*' /etc/network/interfaces; then #  noqa
         echo "source /etc/network/interfaces.d/*" >> /etc/network/interfaces
         echo 'Network configuration set to source /etc/network/interfaces.d/*'
     fi
