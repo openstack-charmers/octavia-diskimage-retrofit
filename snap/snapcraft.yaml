@@ -42,7 +42,7 @@ parts:
     source-type: git
     source-branch: master
     override-build: |
-      patch -p1 < ../../../project/patch/patch-diskimage-builder-python3.patch
+      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-diskimage-builder-python3.patch
       snapcraftctl build
   qemu:
     source: https://git.launchpad.net/ubuntu/+source/qemu
@@ -126,7 +126,7 @@ parts:
     plugin: autotools
     override-pull: |
       git clone https://github.com/libguestfs/supermin.git .
-      patch -p1 < ../../../project/patch/patch-supermin-gnulib-submodule-url.patch
+      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-supermin-gnulib-submodule-url.patch
       git submodule update --recursive --force
     override-build: |
       ./bootstrap
@@ -158,11 +158,11 @@ parts:
       - PYTHON: /snap/$SNAPCRAFT_PROJECT_NAME/current/usr/bin/python3
       - QEMU: /snap/$SNAPCRAFT_PROJECT_NAME/current/bin/qemu-system-x86_64
     override-build: |
-      patch -p1 < ../../../project/patch/patch-libguestfs-po-Don-t-fail-installation-if-parts-of-translated-do.patch
-      patch -p1 < ../../../project/patch/patch-ocaml-lgnu.patch
-      patch -p1 < ../../../project/patch/patch-ocaml-examples-gnulib.patch
-      patch -p1 < ../../../project/patch/patch-libguestfs-dib-feature-modify-image.patch
-      patch -p1 < ../../../project/patch/patch-libguestfs-appliance-init-resolvconf.patch
+      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-po-Don-t-fail-installation-if-parts-of-translated-do.patch
+      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-ocaml-lgnu.patch
+      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-ocaml-examples-gnulib.patch
+      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-dib-feature-modify-image.patch
+      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-appliance-init-resolvconf.patch
       mkdir -p /snap/$SNAPCRAFT_PROJECT_NAME
       ln -sf $SNAPCRAFT_STAGE /snap/$SNAPCRAFT_PROJECT_NAME/current
       snapcraftctl build
@@ -235,7 +235,6 @@ parts:
       - libsystemd-dev
       - libtirpc1
       - libyara3
-      - linux-image-kvm
       - mtools
       - nilfs-tools
       - ntfs-3g
