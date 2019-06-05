@@ -189,7 +189,7 @@ parts:
       mkdir -p usr/local/lib/guestfs/appliance
       mkdir -p /snap/$SNAPCRAFT_PROJECT_NAME
       ln -sf $SNAPCRAFT_STAGE /snap/$SNAPCRAFT_PROJECT_NAME/current
-      env -i LIBGUESTFS_PATH=$SNAPCRAFT_STAGE/lib/guestfs LD_LIBRARY_PATH=$SNAPCRAFT_STAGE/lib:$SNAPCRAFT_STAGE/lib/$SNAPCRAFT_ARCH_TRIPLET:$SNAPCRAFT_STAGE/usr/lib:$SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET PATH=$SNAPCRAFT_STAGE/usr/sbin:$SNAPCRAFT_STAGE/usr/bin:$SNAPCRAFT_STAGE/sbin:$SNAPCRAFT_STAGE/bin:/usr/sbin:/usr/bin:/sbin:/bin libguestfs-make-fixed-appliance $SNAPCRAFT_PRIME/usr/local/lib/guestfs/appliance
+      env -i LIBGUESTFS_PATH=$SNAPCRAFT_STAGE/lib/guestfs LD_LIBRARY_PATH=$SNAPCRAFT_STAGE/lib:$SNAPCRAFT_STAGE/lib/$SNAPCRAFT_ARCH_TRIPLET:$SNAPCRAFT_STAGE/usr/lib:$SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET PATH=$SNAPCRAFT_STAGE/usr/sbin:$SNAPCRAFT_STAGE/usr/bin:$SNAPCRAFT_STAGE/sbin:$SNAPCRAFT_STAGE/bin:/usr/sbin:/usr/bin:/sbin:/bin LIBGUESTFS_DEBUG=1 LIBGUESTFS_TRACE=1 libguestfs-make-fixed-appliance $SNAPCRAFT_PRIME/usr/local/lib/guestfs/appliance
       rm -f /snap/$SNAPCRAFT_PROJECT_NAME/current
       rmdir /snap/$SNAPCRAFT_PROJECT_NAME
       chmod 0644 usr/local/lib/guestfs/appliance/kernel
