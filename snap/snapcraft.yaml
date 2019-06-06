@@ -325,6 +325,8 @@ parts:
         - zfs-fuse
       - on arm64:
         - linux-image-virtual
+      - on armhf:
+        - linux-image-generic
       - on i386:
         - linux-image-virtual
         - syslinux
