@@ -190,7 +190,7 @@ parts:
       patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-appliance-init-resolvconf.patch
       mkdir -p /snap/$SNAPCRAFT_PROJECT_NAME
       ln -sf $SNAPCRAFT_STAGE /snap/$SNAPCRAFT_PROJECT_NAME/current
-      env QEMU=/snap/$SNAPCRAFT_PROJECT_NAME/current/bin/qemu-system-$(dpkg-architecture -qDEB_HOST_GNU_CPU | sed -r -e 's,i[456]86,i386,' -e 's,sparc.*,sparc64,' -e 's,powerpc(64.*)?,ppc64,' -e 's,arm.*,arm,') snapcraftctl build
+      env PATH=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/sbin:/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/bin:/snap/$SNAPCRAFT_PROJECT_NAME/current/sbin:/snap/$SNAPCRAFT_PROJECT_NAME/current/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/snapcraft/current/bin/scriptlet-bin QEMU=/snap/$SNAPCRAFT_PROJECT_NAME/current/bin/qemu-system-$(dpkg-architecture -qDEB_HOST_GNU_CPU | sed -r -e 's,i[456]86,i386,' -e 's,sparc.*,sparc64,' -e 's,powerpc(64.*)?,ppc64,' -e 's,arm.*,arm,') snapcraftctl build
       rm -f /snap/$SNAPCRAFT_PROJECT_NAME/current
       rmdir /snap/$SNAPCRAFT_PROJECT_NAME
     override-prime: |
