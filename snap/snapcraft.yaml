@@ -186,6 +186,7 @@ parts:
       - QEMU: $SNAPCRAFT_STAGE/bin/qemu-system-$QEMU_CPU
     override-build: |
       patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-autogen.patch
+      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-m4-guestfs-qemu.patch
       patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-po-Don-t-fail-installation-if-parts-of-translated-do.patch
       patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-ocaml-lgnu.patch
       patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-ocaml-examples-gnulib.patch
@@ -206,7 +207,6 @@ parts:
       chmod 0644 usr/local/lib/guestfs/appliance/kernel
       snapcraftctl prime
     configflags:
-      - --with-qemu=/snap/$SNAPCRAFT_PROJECT_NAME/bin/qemu-system-$QEMU_CPU
       - --disable-silent-rules
       - --disable-gnulib-tests
       - --with-readline
