@@ -1,0 +1,23 @@
+diff --git a/autogen.sh b/autogen.sh
+index fcdd0ce5d..bfc0ee833 100755
+--- a/autogen.sh
++++ b/autogen.sh
+@@ -42,10 +42,12 @@ if [ ! -z "$BUILDDIR" ]; then
+     CONFIGUREDIR=..
+ fi
+ 
+-# If no arguments were specified and configure has run before, use the previous
+-# arguments
+-if test $# -eq 0 && test -x ./config.status; then
+-    ./config.status --recheck
+-else
+-    $CONFIGUREDIR/configure "$@"
++if test -z "$NOCONFIGURE"; then
++    # If no arguments were specified and configure has run before, use the previous
++    # arguments
++    if test $# -eq 0 && test -x ./config.status; then
++        ./config.status --recheck
++    else
++        $CONFIGUREDIR/configure "$@"
++    fi
+ fi
