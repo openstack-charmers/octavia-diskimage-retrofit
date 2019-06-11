@@ -4,6 +4,8 @@
 chmod 2750 /etc/octavia
 sed -i 's/CONFIG_FILE=.*$/CONFIG_FILE=\/etc\/octavia\/amphora-agent.conf/' \
     /etc/init.d/amphora-agent
+sed -i '/^User=octavia$/d' /lib/systemd/system/amphora-agent.service
+sed -i '/^Group=octavia$/d' /lib/systemd/system/amphora-agent.service
 
 touch /var/log/amphora-agent.log
 chmod 0640 /var/log/amphora-agent.log
