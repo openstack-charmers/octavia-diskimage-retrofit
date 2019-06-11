@@ -1,4 +1,5 @@
 name: octavia-diskimage-retrofit
+icon: src/icon.svg
 version: git
 summary: tool for retrofitting cloud images for use as Octavia Amphora image.
 description: |
