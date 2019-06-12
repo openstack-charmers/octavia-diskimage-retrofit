@@ -48,6 +48,10 @@ virt-dib -vvv -xxxx \
     sos keepalived-octavia ipvsadmin pip-cache certs-ramfs \
     ubuntu-amphora-agent
 
-virt-sysprep -a $TEMP_IMAGE_FILE --operations tmp-files --delete "/var/lib/apt/*" --delete "/var/cache/*"
+virt-sysprep -a $TEMP_IMAGE_FILE \
+    --operations tmp-files,customize \
+    --delete "/var/lib/apt/*" \
+    --delete "/var/cache/*"
+
 virt-sparsify --in-place $TEMP_IMAGE_FILE
 qemu-img convert -c -O qcow2 $TEMP_IMAGE_FILE $OUTPUT_IMAGE
