@@ -3,18 +3,21 @@
 NAME=$(basename $0)
 
 usage() {
-    echo $NAME: input output [-dh] \
-        [-u Ubuntu Cloud Archive pocket] [-O output format}
+    echo $NAME: input output [-dhr] \
+        [-u Ubuntu Cloud Archive pocket] [-O output format]
     exit 64
 }
 
-while getopts "dhu:O:" options; do
+while getopts "dhru:O:" options; do
     case "${options}" in
         d)
             DEBUG="-v -xxxx"
             ;;
         h)
             usage
+            ;;
+        r)
+            RESIZE=" "
             ;;
         u)
             DIB_UBUNTU_CLOUD_ARCHIVE=$OPTARG
@@ -41,6 +44,7 @@ fi
 # Set defaults
 DIB_UBUNTU_CLOUD_ARCHIVE=${DIB_UBUNTU_CLOUD_ARCHIVE:-rocky}
 OUTPUT_FORMAT=${OUTPUT_FORMAT:-qcow2}
+RESIZE=${RESIZE:-growrootfs}
 if [ $OUTPUT_FORMAT == "qcow2" ]; then
     COMPRESS="-c"
 fi
@@ -49,6 +53,10 @@ TEMP_IMAGE_FILE=$(mktemp $TMPDIR/output-XXXXXX.raw)
 TEMP_IMAGE_NAME=$(echo ${TEMP_IMAGE_FILE}|cut -f1 -d\.)
 
 qemu-img convert -O raw $INPUT_IMAGE $TEMP_IMAGE_FILE
+
+if [ -n "$RESIZE" ]; then
+    qemu-img resize -f raw $TEMP_IMAGE_FILE +1G
+fi
 
 virt-dib ${DEBUG} \
     -B $SNAP/lib/python3.6/site-packages/diskimage_builder/lib \
@@ -63,7 +71,7 @@ virt-dib ${DEBUG} \
     --python /snap/octavia-diskimage-retrofit/current/usr/bin/python3 \
     --install-type package \
     --extra-packages initramfs-tools \
-    dpkg debian-networking ubuntu-cloud-archive \
+    ${RESIZE} dpkg debian-networking ubuntu-cloud-archive \
     haproxy-octavia rebind-sshd no-resolvconf amphora-agent \
     sos keepalived-octavia ipvsadmin pip-cache certs-ramfs \
     ubuntu-amphora-agent
