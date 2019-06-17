@@ -78,6 +78,7 @@ virt-dib ${DEBUG} \
     --envvar DIB_RELEASE=bionic \
     --envvar DIB_PYTHON_VERSION=3 \
     --envvar DIB_UBUNTU_CLOUD_ARCHIVE=$DIB_UBUNTU_CLOUD_ARCHIVE \
+    --envvar http_proxy="${http_proxy}" \
     --python /snap/octavia-diskimage-retrofit/current/usr/bin/python3 \
     --install-type package \
     --extra-packages initramfs-tools \
