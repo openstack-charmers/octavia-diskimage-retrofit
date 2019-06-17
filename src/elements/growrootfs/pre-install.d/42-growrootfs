@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Resize the / filesystem
+ROOT_DEV=$(awk '$2=="/"{print$1}' /proc/mounts)
+ROOT_DISK=$(echo "$ROOT_DEV" | grep -oe '.*[^0-9]\+' | sed -e 's/p$//')
+PARTNUM=$(echo "$ROOT_DEV" | grep -oe '[0-9]\+$')
+growpart $ROOT_DISK $PARTNUM
+resize2fs $ROOT_DEV

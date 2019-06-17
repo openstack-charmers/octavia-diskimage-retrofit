@@ -1,20 +1,33 @@
 #!/bin/bash
 
+set -e
+
 NAME=$(basename $0)
 
 usage() {
-    echo $NAME: input output [-dh] \
-        [-u Ubuntu Cloud Archive pocket] [-O output format}
+    >&2 cat <<EOF
+$NAME: input output [-dhr] [-u Ubuntu Cloud Archive pocket] [-O output format]
+
+    -d    Enable verbose debugging output
+    -h    Dislay help/usage
+    -r    Do not resize image before retrofitting
+    -u    Specify Ubuntu Cloud Archive pocket (e.g. 'rocky')
+    -O    Specify output format (default: 'qcow2')
+EOF
     exit 64
 }
 
-while getopts "dhu:O:" options; do
+while getopts "dhru:O:" options; do
     case "${options}" in
         d)
             DEBUG="-v -xxxx"
+            set -x
             ;;
         h)
             usage
+            ;;
+        r)
+            RESIZE=" "
             ;;
         u)
             DIB_UBUNTU_CLOUD_ARCHIVE=$OPTARG
@@ -34,13 +47,14 @@ INPUT_IMAGE=$(realpath $1)
 OUTPUT_IMAGE=$(realpath $2)
 if ! [[ "$INPUT_IMAGE" =~ ^${SNAP_COMMON}/.* && \
         "$OUTPUT_IMAGE" =~ ^${SNAP_COMMON}/.* ]]; then
-    echo "$NAME: both input and output image must reside within '$SNAP_COMMON'"
+    >&2 echo "$NAME: both input and output image must reside within '$SNAP_COMMON'"
     exit 65
 fi
 
 # Set defaults
 DIB_UBUNTU_CLOUD_ARCHIVE=${DIB_UBUNTU_CLOUD_ARCHIVE:-rocky}
 OUTPUT_FORMAT=${OUTPUT_FORMAT:-qcow2}
+RESIZE=${RESIZE:-growrootfs}
 if [ $OUTPUT_FORMAT == "qcow2" ]; then
     COMPRESS="-c"
 fi
@@ -49,6 +63,10 @@ TEMP_IMAGE_FILE=$(mktemp $TMPDIR/output-XXXXXX.raw)
 TEMP_IMAGE_NAME=$(echo ${TEMP_IMAGE_FILE}|cut -f1 -d\.)
 
 qemu-img convert -O raw $INPUT_IMAGE $TEMP_IMAGE_FILE
+
+if [ -n "$RESIZE" ]; then
+    qemu-img resize -f raw $TEMP_IMAGE_FILE +1G
+fi
 
 virt-dib ${DEBUG} \
     -B $SNAP/lib/python3.6/site-packages/diskimage_builder/lib \
@@ -60,10 +78,11 @@ virt-dib ${DEBUG} \
     --envvar DIB_RELEASE=bionic \
     --envvar DIB_PYTHON_VERSION=3 \
     --envvar DIB_UBUNTU_CLOUD_ARCHIVE=$DIB_UBUNTU_CLOUD_ARCHIVE \
+    --envvar http_proxy="${http_proxy}" \
     --python /snap/octavia-diskimage-retrofit/current/usr/bin/python3 \
     --install-type package \
     --extra-packages initramfs-tools \
-    dpkg debian-networking ubuntu-cloud-archive \
+    ${RESIZE} dpkg debian-networking ubuntu-cloud-archive \
     haproxy-octavia rebind-sshd no-resolvconf amphora-agent \
     sos keepalived-octavia ipvsadmin pip-cache certs-ramfs \
     ubuntu-amphora-agent
