@@ -1,10 +1,19 @@
 #!/bin/bash
 
+set -e
+
 NAME=$(basename $0)
 
 usage() {
-    echo $NAME: input output [-dhr] \
-        [-u Ubuntu Cloud Archive pocket] [-O output format]
+    >&2 cat <<EOF
+$NAME: input output [-dhr] [-u Ubuntu Cloud Archive pocket] [-O output format]
+
+    -d    Enable verbose debugging output
+    -h    Dislay help/usage
+    -r    Do not resize image before retrofitting
+    -u    Specify Ubuntu Cloud Archive pocket (e.g. 'rocky')
+    -O    Specify output format (default: 'qcow2')
+EOF
     exit 64
 }
 
@@ -12,6 +21,7 @@ while getopts "dhru:O:" options; do
     case "${options}" in
         d)
             DEBUG="-v -xxxx"
+            set -x
             ;;
         h)
             usage
@@ -37,7 +47,7 @@ INPUT_IMAGE=$(realpath $1)
 OUTPUT_IMAGE=$(realpath $2)
 if ! [[ "$INPUT_IMAGE" =~ ^${SNAP_COMMON}/.* && \
         "$OUTPUT_IMAGE" =~ ^${SNAP_COMMON}/.* ]]; then
-    echo "$NAME: both input and output image must reside within '$SNAP_COMMON'"
+    >&2 echo "$NAME: both input and output image must reside within '$SNAP_COMMON'"
     exit 65
 fi
 
