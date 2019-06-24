@@ -1,6 +1,8 @@
 name: octavia-diskimage-retrofit
 icon: src/icon.svg
-version: git
+version: script
+version-script: bin/version
+grade: stable
 summary: tool for retrofitting cloud images for use as Octavia Amphora image.
 description: |
   tool for retrofitting cloud images for use as Octavia Amphora image.
@@ -26,12 +28,6 @@ parts:
   retrofit:
     plugin: dump
     source: src/retrofit
-    override-pull: |
-      snapcraftctl pull
-      version="$(git describe --always | sed -e 's/-/+git/;y/-/./')"
-      [ -n "$(echo $version | grep "+git")" ] && grade=devel || grade=stable
-      snapcraftctl set-version "$version"
-      snapcraftctl set-grade "$grade"
     organize:
       retrofit.sh: bin/retrofit.sh
   local-elements:
