@@ -43,7 +43,7 @@ parts:
     source-type: git
     source-branch: master
     override-build: |
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-diskimage-builder-python3.patch
+      find diskimage_builder/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*python$/#\!\/usr\/bin\/env python3/'
       snapcraftctl build
   qemu:
     source: https://git.launchpad.net/ubuntu/+source/qemu
