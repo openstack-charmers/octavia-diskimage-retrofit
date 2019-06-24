@@ -6,7 +6,6 @@ description: |
   tool for retrofitting cloud images for use as Octavia Amphora image.
 confinement: strict
 base: core18
-grade: devel
 architectures:
   - build-on: amd64
   - build-on: i386
@@ -27,6 +26,12 @@ parts:
   retrofit:
     plugin: dump
     source: src/retrofit
+    override-pull: |
+      snapcraftctl pull
+      version="$(git describe --always | sed -e 's/-/+git/;y/-/./')"
+      [ -n "$(echo $version | grep "+git")" ] && grade=devel || grade=stable
+      snapcraftctl set-version "$version"
+      snapcraftctl set-grade "$grade"
     organize:
       retrofit.sh: bin/retrofit.sh
   local-elements:
