@@ -6,7 +6,7 @@ grade: stable
 summary: tool for retrofitting cloud images for use as Octavia Amphora image.
 description: |
   tool for retrofitting cloud images for use as Octavia Amphora image.
-confinement: strict
+confinement: devmode
 base: core18
 architectures:
   - build-on: amd64

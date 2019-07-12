@@ -13,12 +13,10 @@ Example Usage
 =============
 
     sudo snap install --edge --devmode octavia-diskimage-retrofit
-    sudo snap connect octavia-diskimage-retrofit:fuse-support
-    sudo snap connect octavia-diskimage-retrofit:kvm
 
 **NOTE** The requirement for ``--devmode`` is pending resolution of [this issue](https://github.com/openstack-charmers/octavia-diskimage-retrofit/issues/6)
 
-**NOTE** connecting kvm is optional
+**NOTE** The tool will use KVM accelleration when available
 
     sudo -s
     cd /var/snap/octavia-diskimage-retrofit/common/tmp
