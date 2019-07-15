@@ -1,0 +1,14 @@
+diff --git a/lib/launch-direct.c b/lib/launch-direct.c
+index ee2dcb884..2b1fc3b4e 100644
+--- a/lib/launch-direct.c
++++ b/lib/launch-direct.c
+@@ -507,6 +507,9 @@ launch_direct (guestfs_h *g, void *datav, const char *arg)
+ #ifdef __aarch64__
+     if (has_kvm && !force_tcg)
+       append_list ("gic-version=host");
++#endif
++#ifdef __powerpc64__
++    append_list("cap-htm=off");
+ #endif
+     append_list_format ("accel=%s", !force_tcg ? "kvm:tcg" : "tcg");
+   } end_list ();

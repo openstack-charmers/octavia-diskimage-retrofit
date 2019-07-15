@@ -12,6 +12,7 @@ architectures:
   - build-on: amd64
   - build-on: i386
   - build-on: arm64
+  - build-on: ppc64le
 environment:
   LD_LIBRARY_PATH: $SNAP/lib:$SNAP/lib/$SNAPCRAFT_ARCH_TRIPLET:$SNAP/usr/lib:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET
   PATH: $SNAP/usr/sbin:$SNAP/usr/bin:$SNAP/sbin:$SNAP/bin:$PATH
@@ -40,6 +41,9 @@ parts:
     source: https://opendev.org/openstack/octavia.git
     source-type: git
     source-branch: master
+    override-build: |
+      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-octavia-elements-amphora-agent-package-installs.patch
+      snapcraftctl build
     organize:
       elements/*: usr/local/lib/elements/
   diskimage-builder:
@@ -65,9 +69,11 @@ parts:
       - --libdir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/$SNAPCRAFT_ARCH_TRIPLET
       - --libexecdir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/qemu
       - --localstatedir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common
+      - --interp-prefix=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/etc/qemu-binfmt/%M
+      - --firmwarepath=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/qemu
+      - --datadir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/qemu
       - --disable-blobs
       - --disable-strip
-      - --interp-prefix=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/etc/qemu-binfmt/%M
       - --disable-user
       - --enable-system
       - --enable-linux-user
@@ -131,14 +137,23 @@ parts:
       - libcapstone3
       - libfdt1
       - libpixman-1-0
+      - libslang2
       - on amd64:
+        - qemu-system-x86
         - libxen-4.9
       - on arm64:
+        - qemu-system-arm
         - libxen-4.9
       - on armhf:
+        - qemu-system-arm
         - libxen-4.9
       - on i386:
+        - qemu-system-x86
         - libxen-4.9
+      - on ppc64el:
+        - qemu-system-ppc
+      - on s390x:
+        - qemu-system-s390x
   supermin:
     source: https://github.com/libguestfs/supermin.git
     source-type: git
@@ -198,6 +213,7 @@ parts:
       patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-ocaml-examples-gnulib.patch
       patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-dib-feature-modify-image.patch
       patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-appliance-init-resolvconf.patch
+      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-ppc64le-cap-htm.patch
       mkdir -p /snap/$SNAPCRAFT_PROJECT_NAME
       ln -sf $SNAPCRAFT_STAGE /snap/$SNAPCRAFT_PROJECT_NAME/current
       snapcraftctl build
