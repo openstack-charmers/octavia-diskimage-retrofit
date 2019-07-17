@@ -41,9 +41,6 @@ parts:
     source: https://opendev.org/openstack/octavia.git
     source-type: git
     source-branch: master
-    override-build: |
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-octavia-elements-amphora-agent-package-installs.patch
-      snapcraftctl build
     organize:
       elements/*: usr/local/lib/elements/
   diskimage-builder:
