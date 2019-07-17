@@ -12,7 +12,7 @@ architectures:
   - build-on: amd64
   - build-on: i386
   - build-on: arm64
-  - build-on: ppc64le
+  - build-on: ppc64el
 environment:
   LD_LIBRARY_PATH: $SNAP/lib:$SNAP/lib/$SNAPCRAFT_ARCH_TRIPLET:$SNAP/usr/lib:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET
   PATH: $SNAP/usr/sbin:$SNAP/usr/bin:$SNAP/sbin:$SNAP/bin:$PATH
@@ -213,7 +213,7 @@ parts:
       patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-ocaml-examples-gnulib.patch
       patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-dib-feature-modify-image.patch
       patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-appliance-init-resolvconf.patch
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-ppc64le-cap-htm.patch
+      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-ppc64el-cap-htm.patch
       mkdir -p /snap/$SNAPCRAFT_PROJECT_NAME
       ln -sf $SNAPCRAFT_STAGE /snap/$SNAPCRAFT_PROJECT_NAME/current
       snapcraftctl build
