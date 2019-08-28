@@ -11,7 +11,7 @@ $NAME: input output [-dhr] [-u Ubuntu Cloud Archive pocket] [-O output format]
     -d    Enable verbose debugging output
     -h    Dislay help/usage
     -r    Do not resize image before retrofitting
-    -u    Specify Ubuntu Cloud Archive pocket (e.g. 'rocky')
+    -u    Specify Ubuntu Cloud Archive pocket (e.g. 'stein')
     -O    Specify output format (default: 'qcow2')
 EOF
     exit 64
@@ -52,7 +52,7 @@ if ! [[ "$INPUT_IMAGE" =~ ^${SNAP_COMMON}/.* && \
 fi
 
 # Set defaults
-DIB_UBUNTU_CLOUD_ARCHIVE=${DIB_UBUNTU_CLOUD_ARCHIVE:-rocky}
+DIB_UBUNTU_CLOUD_ARCHIVE=${DIB_UBUNTU_CLOUD_ARCHIVE:-stein}
 OUTPUT_FORMAT=${OUTPUT_FORMAT:-qcow2}
 RESIZE=${RESIZE:-growrootfs}
 if [ $OUTPUT_FORMAT == "qcow2" ]; then

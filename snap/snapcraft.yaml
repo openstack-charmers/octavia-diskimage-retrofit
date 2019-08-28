@@ -40,14 +40,14 @@ parts:
     plugin: dump
     source: https://opendev.org/openstack/octavia.git
     source-type: git
-    source-branch: master
+    source-branch: stable/stein
     organize:
       elements/*: usr/local/lib/elements/
   diskimage-builder:
     plugin: python
     source: https://opendev.org/openstack/diskimage-builder.git
     source-type: git
-    source-branch: master
+    source-branch: 2.25.0
     override-build: |
       find diskimage_builder/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*python$/#\!\/usr\/bin\/env python3/'
       snapcraftctl build
