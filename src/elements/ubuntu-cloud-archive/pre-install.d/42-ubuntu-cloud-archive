@@ -3,6 +3,7 @@
 # Add the Ubuntu Cloud Archive
 
 if [ ! -z "${DIB_UBUNTU_CLOUD_ARCHIVE}" ]; then
+    apt-get update
     add-apt-repository cloud-archive:$DIB_UBUNTU_CLOUD_ARCHIVE
     apt-get update
 fi
