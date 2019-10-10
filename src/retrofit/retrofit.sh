@@ -12,12 +12,13 @@ $NAME: input output [-dhr] [-u Ubuntu Cloud Archive pocket] [-O output format]
     -h    Dislay help/usage
     -r    Do not resize image before retrofitting
     -u    Specify Ubuntu Cloud Archive pocket (e.g. 'stein')
+    -p    Specify PPA to add to image
     -O    Specify output format (default: 'qcow2')
 EOF
     exit 64
 }
 
-while getopts "dhru:O:" options; do
+while getopts "dhp:ru:O:" options; do
     case "${options}" in
         d)
             DEBUG="-v -xxxx"
@@ -26,6 +27,9 @@ while getopts "dhru:O:" options; do
         h)
             usage
             ;;
+	p)
+            DIB_UBUNTU_PPA=$OPTARG
+	    ;;
         r)
             RESIZE=" "
             ;;
@@ -53,6 +57,7 @@ fi
 
 # Set defaults
 DIB_UBUNTU_CLOUD_ARCHIVE=${DIB_UBUNTU_CLOUD_ARCHIVE:-stein}
+DIB_UBUNTU_PPA=${DIB_UBUNTU_PPA:-""}
 OUTPUT_FORMAT=${OUTPUT_FORMAT:-qcow2}
 RESIZE=${RESIZE:-growrootfs}
 if [ $OUTPUT_FORMAT == "qcow2" ]; then
@@ -78,12 +83,14 @@ virt-dib ${DEBUG} \
     --envvar DIB_RELEASE=bionic \
     --envvar DIB_PYTHON_VERSION=3 \
     --envvar DIB_UBUNTU_CLOUD_ARCHIVE=$DIB_UBUNTU_CLOUD_ARCHIVE \
+    --envvar DIB_UBUNTU_PPA=$DIB_UBUNTU_PPA \
     --envvar http_proxy="${http_proxy}" \
     --python $SNAP/usr/bin/python3 \
     --install-type package \
     --extra-packages initramfs-tools \
     --exclude-element dib-python \
     ${RESIZE} dpkg debian-networking ubuntu-cloud-archive \
+    ubuntu-ppa \
     haproxy-octavia rebind-sshd no-resolvconf amphora-agent \
     sos keepalived-octavia ipvsadmin pip-cache certs-ramfs \
     ubuntu-amphora-agent
