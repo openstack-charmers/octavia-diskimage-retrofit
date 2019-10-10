@@ -1,0 +1,15 @@
+From: Frode Nordahl <frode.nordahl@canonical.com>
+Subject: LP: #1690891
+
+diff --git a/elements/amphora-agent/package-installs.yaml b/elements/amphora-agent/package-installs.yaml
+index bff8da34..76bce355 100644
+--- a/elements/amphora-agent/package-installs.yaml
++++ b/elements/amphora-agent/package-installs.yaml
+@@ -47,7 +47,6 @@ screen:
+ socat:
+ tcpdump:
+ ubuntu-cloudimage-keyring:
+-ureadahead:
+ uuid-runtime:
+ vim-tiny:
+ vlan:

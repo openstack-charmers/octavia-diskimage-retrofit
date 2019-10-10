@@ -4,7 +4,8 @@ dist: xenial
 language: python
 install:
   - pip install tox-travis
-  - sudo snap install --classic --edge snapcraft
+  - sudo snap refresh
+  - sudo snap install --classic snapcraft
 env:
  - ENV=bashate
  - ENV=inspect

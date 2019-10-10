@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Add a Ubuntu PPA
+
+if [ ! -z "${DIB_UBUNTU_PPA}" ]; then
+    apt-get update
+    add-apt-repository ppa:$DIB_UBUNTU_PPA
+    apt-get update
+fi
