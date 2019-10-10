@@ -27,9 +27,9 @@ while getopts "dhp:ru:O:" options; do
         h)
             usage
             ;;
-	p)
+        p)
             DIB_UBUNTU_PPA=$OPTARG
-	    ;;
+            ;;
         r)
             RESIZE=" "
             ;;
