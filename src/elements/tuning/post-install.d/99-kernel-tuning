@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -eu
+set -o pipefail
+
+#Entries added to the elements provided in Octavia source
+
+sysctl-write-value net.ipv4.tcp_congestion_control bbr
+sysctl-write-value net.core.default_qdisc fq
+sysctl-write-value net.ipv4.tcp_syn_retries 3
+sysctl-write-value net.ipv4.neigh.default.gc_thresh1 128
+sysctl-write-value net.ipv4.neigh.default.gc_thresh2 28672
+sysctl-write-value net.ipv4.neigh.default.gc_thresh3 32768
+sysctl-write-value net.ipv6.neigh.default.gc_thresh1 128
+sysctl-write-value net.ipv6.neigh.default.gc_thresh2 28672
+sysctl-write-value net.ipv6.neigh.default.gc_thresh3 32768
+# It's ok for these to fail if conntrack module isn't loaded
+sysctl-write-value net.nf_conntrack_max 1000000  || true
+sysctl-write-value net.netfilter.nf_conntrack_max 1000000  || true
