@@ -8,6 +8,7 @@ usage() {
     >&2 cat <<EOF
 $NAME: input output [-dhr] [-u Ubuntu Cloud Archive pocket] [-O output format]
 
+    -c    Specify Ubuntu Cloud Archive mirror (e.g. 'deb http://ppa.launchpad.net/ubuntu-cloud-archive/stein/ubuntu bionic main')
     -d    Enable verbose debugging output
     -h    Dislay help/usage
     -r    Do not resize image before retrofitting
@@ -18,8 +19,11 @@ EOF
     exit 64
 }
 
-while getopts "dhp:ru:O:" options; do
+while getopts "c:dhp:ru:O:" options; do
     case "${options}" in
+        c)
+            DIB_UBUNTU_CLOUD_ARCHIVE_MIRROR=$OPTARG
+            ;;
         d)
             DEBUG="-v -xxxx"
             set -x
@@ -57,6 +61,7 @@ fi
 
 # Set defaults
 DIB_UBUNTU_CLOUD_ARCHIVE=${DIB_UBUNTU_CLOUD_ARCHIVE:-stein}
+DIB_UBUNTU_CLOUD_ARCHIVE_MIRROR=${DIB_UBUNTU_CLOUD_ARCHIVE_MIRROR:-""}
 DIB_UBUNTU_PPA=${DIB_UBUNTU_PPA:-""}
 OUTPUT_FORMAT=${OUTPUT_FORMAT:-qcow2}
 RESIZE=${RESIZE:-growrootfs}
@@ -83,6 +88,7 @@ virt-dib ${DEBUG} \
     --envvar DIB_RELEASE=bionic \
     --envvar DIB_PYTHON_VERSION=3 \
     --envvar DIB_UBUNTU_CLOUD_ARCHIVE=$DIB_UBUNTU_CLOUD_ARCHIVE \
+    --envvar DIB_UBUNTU_CLOUD_ARCHIVE_MIRROR="${DIB_UBUNTU_CLOUD_ARCHIVE_MIRROR}" \
     --envvar DIB_UBUNTU_PPA=$DIB_UBUNTU_PPA \
     --envvar http_proxy="${http_proxy}" \
     --python $SNAP/usr/bin/python3 \
