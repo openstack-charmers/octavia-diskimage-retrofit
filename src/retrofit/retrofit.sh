@@ -8,8 +8,10 @@ usage() {
     >&2 cat <<EOF
 $NAME: input output [-dhr] [-u Ubuntu Cloud Archive pocket] [-O output format]
 
+    -c    Specify Ubuntu Cloud Archive mirror (e.g. 'deb http://ppa.launchpad.net/ubuntu-cloud-archive/stein/ubuntu bionic main')
     -d    Enable verbose debugging output
     -h    Dislay help/usage
+    -m    Specify Ubuntu mirror (e.g. 'deb http://archive.ubuntu.com/ubuntu bionic main')
     -r    Do not resize image before retrofitting
     -u    Specify Ubuntu Cloud Archive pocket (e.g. 'stein')
     -p    Specify PPA to add to image
@@ -18,14 +20,20 @@ EOF
     exit 64
 }
 
-while getopts "dhp:ru:O:" options; do
+while getopts "c:dhm:p:ru:O:" options; do
     case "${options}" in
+        c)
+            DIB_UBUNTU_CLOUD_ARCHIVE_MIRROR=$OPTARG
+            ;;
         d)
             DEBUG="-v -xxxx"
             set -x
             ;;
         h)
             usage
+            ;;
+        m)
+            DIB_UBUNTU_MIRROR=$OPTARG
             ;;
         p)
             DIB_UBUNTU_PPA=$OPTARG
@@ -56,7 +64,9 @@ if ! [[ "$INPUT_IMAGE" =~ ^${SNAP_COMMON}/.* && \
 fi
 
 # Set defaults
+DIB_UBUNTU_MIRROR=${DIB_UBUNTU_MIRROR:-""}
 DIB_UBUNTU_CLOUD_ARCHIVE=${DIB_UBUNTU_CLOUD_ARCHIVE:-stein}
+DIB_UBUNTU_CLOUD_ARCHIVE_MIRROR=${DIB_UBUNTU_CLOUD_ARCHIVE_MIRROR:-""}
 DIB_UBUNTU_PPA=${DIB_UBUNTU_PPA:-""}
 OUTPUT_FORMAT=${OUTPUT_FORMAT:-qcow2}
 RESIZE=${RESIZE:-growrootfs}
@@ -82,15 +92,17 @@ virt-dib ${DEBUG} \
     --envvar DISTRO_NAME=ubuntu \
     --envvar DIB_RELEASE=bionic \
     --envvar DIB_PYTHON_VERSION=3 \
+    --envvar DIB_UBUNTU_MIRROR="${DIB_UBUNTU_MIRROR}" \
     --envvar DIB_UBUNTU_CLOUD_ARCHIVE=$DIB_UBUNTU_CLOUD_ARCHIVE \
+    --envvar DIB_UBUNTU_CLOUD_ARCHIVE_MIRROR="${DIB_UBUNTU_CLOUD_ARCHIVE_MIRROR}" \
     --envvar DIB_UBUNTU_PPA=$DIB_UBUNTU_PPA \
     --envvar http_proxy="${http_proxy}" \
     --python $SNAP/usr/bin/python3 \
     --install-type package \
     --extra-packages initramfs-tools \
     --exclude-element dib-python \
-    ${RESIZE} dpkg debian-networking ubuntu-cloud-archive \
-    ubuntu-ppa \
+    ${RESIZE} dpkg debian-networking ubuntu-archive \
+    ubuntu-cloud-archive ubuntu-ppa \
     haproxy-octavia rebind-sshd no-resolvconf amphora-agent \
     sos keepalived-octavia ipvsadmin pip-cache certs-ramfs \
     ubuntu-amphora-agent tuning
