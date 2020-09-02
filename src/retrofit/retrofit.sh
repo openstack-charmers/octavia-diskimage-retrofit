@@ -80,7 +80,7 @@ TEMP_IMAGE_NAME=$(echo ${TEMP_IMAGE_FILE}|cut -f1 -d\.)
 qemu-img convert -O raw $INPUT_IMAGE $TEMP_IMAGE_FILE
 
 if [ -n "$RESIZE" ]; then
-    qemu-img resize -f raw $TEMP_IMAGE_FILE +1G
+    qemu-img resize -f raw $TEMP_IMAGE_FILE +2G
 fi
 
 virt-dib ${DEBUG} \

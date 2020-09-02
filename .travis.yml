@@ -8,6 +8,5 @@ install:
   - sudo snap install --classic snapcraft
 env:
  - ENV=bashate
- - ENV=inspect
 script:
  - tox -e $ENV
