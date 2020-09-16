@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -e
+
+# Remove EFI packages to work around LP: #1895835
+RELEASE=$(lsb_release -sc)
+if [ "$RELEASE"x = focalx ]; then
+    echo "Removing GRUB EFI packages to work around LP: #1895835..."
+    DEBIAN_FRONTEND=noninteractive apt-get remove \
+        --ignore-missing \
+        --purge \
+        -y \
+        grub-efi-amd64-bin grub-efi-amd64-signed
+fi

@@ -105,7 +105,7 @@ virt-dib ${DEBUG} \
     ubuntu-cloud-archive ubuntu-ppa \
     haproxy-octavia rebind-sshd no-resolvconf amphora-agent \
     sos keepalived-octavia ipvsadmin pip-cache certs-ramfs \
-    ubuntu-amphora-agent tuning
+    ubuntu-amphora-agent tuning bug1895835
 
 virt-sysprep -a $TEMP_IMAGE_FILE \
     --operations tmp-files,customize \
