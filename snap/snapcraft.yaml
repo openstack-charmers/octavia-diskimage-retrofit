@@ -13,6 +13,19 @@ architectures:
   - build-on: i386
   - build-on: arm64
   - build-on: ppc64el
+
+layout:
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/qemu:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/qemu
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio
+  /usr/share/qemu:
+    bind: $SNAP/usr/share/qemu
+  /usr/share/seabios:
+    bind: $SNAP/usr/share/seabios
+  /usr/lib/ipxe:
+    bind: $SNAP/usr/lib/ipxe
+
 environment:
   LD_LIBRARY_PATH: $SNAP/lib:$SNAP/lib/$SNAPCRAFT_ARCH_TRIPLET:$SNAP/usr/lib:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET
   PATH: $SNAP/usr/sbin:$SNAP/usr/bin:$SNAP/sbin:$SNAP/bin:$PATH
@@ -54,130 +67,6 @@ parts:
     override-build: |
       find diskimage_builder/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*python$/#\!\/usr\/bin\/env python3/'
       snapcraftctl build
-  qemu:
-    source: https://git.launchpad.net/ubuntu/+source/qemu
-    source-type: git
-    source-branch: ubuntu/bionic-security
-    plugin: autotools
-    override-build: |
-      dpkg-source --before-build .
-      snapcraftctl build
-    configflags:
-      - --extra-cflags=-g -O2 -fdebug-prefix-map=/home/ubuntu/qemu-2.11+dfsg=. -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -DCONFIG_QEMU_DATAPATH='"/snap/$SNAPCRAFT_PROJECT_NAME/current/share/qemu:/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/seabios:/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/ipxe/qemu"' -DVENDOR_UBUNTU
-      - --extra-ldflags=-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,--as-needed
-      - --sysconfdir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common
-      - --libdir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/$SNAPCRAFT_ARCH_TRIPLET
-      - --libexecdir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/lib/qemu
-      - --localstatedir=/var/snap/$SNAPCRAFT_PROJECT_NAME/common
-      - --interp-prefix=/var/snap/$SNAPCRAFT_PROJECT_NAME/common/etc/qemu-binfmt/%M
-      - --firmwarepath=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/qemu
-      - --datadir=/snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/qemu
-      - --disable-blobs
-      - --disable-strip
-      - --disable-user
-      - --enable-system
-      - --enable-linux-user
-      - --enable-modules
-      - --enable-linux-aio
-      - --enable-attr
-      - --enable-virtfs
-      - --enable-cap-ng
-      - --enable-curl
-      - --enable-fdt
-      - --enable-gnutls
-      - --disable-gtk
-      - --disable-vte
-      - --disable-sdl
-      - --disable-vnc
-      - --disable-vnc-sasl
-      - --disable-vnc-jpeg
-      - --disable-vnc-png
-      - --disable-spice
-      - --disable-curses
-      - --enable-seccomp
-      - --enable-xfsctl
-      - --enable-kvm
-      - --enable-vhost-net
-    build-packages:
-      - libaio-dev
-      - acpica-tools
-      - libattr1-dev
-      - libcap-dev
-      - libcap-ng-dev
-      - libnuma-dev
-      - zlib1g-dev
-      - uuid-dev
-      - device-tree-compiler
-      - texinfo
-      - libcurl4-gnutls-dev 
-      - libfdt-dev 
-      - gnutls-dev 
-      - libseccomp-dev
-      - xfslibs-dev
-      - libcapstone-dev
-      - pkg-config
-      - libpixman-1-dev
-      - python-all-dev
-      - libglib2.0-dev
-      - on amd64:
-        - libxen-dev
-      - on arm64:
-        - libxen-dev
-      - on armhf:
-        - libxen-dev
-      - on i386:
-        - libxen-dev
-    stage-packages:
-      - seabios
-      - ipxe-qemu
-      - libxml2
-      - libnuma1
-      - libaio1
-      - libcurl3-gnutls
-      - libcapstone3
-      - libfdt1
-      - libpixman-1-0
-      - libslang2
-      - on amd64:
-        - qemu-system-x86
-        - libxen-4.9
-      - on arm64:
-        - qemu-system-arm
-        - libxen-4.9
-      - on armhf:
-        - qemu-system-arm
-        - libxen-4.9
-      - on i386:
-        - qemu-system-x86
-        - libxen-4.9
-      - on ppc64el:
-        - qemu-system-ppc
-      - on s390x:
-        - qemu-system-s390x
-  supermin:
-    source: https://github.com/libguestfs/supermin.git
-    source-type: git
-    source-branch: v5.1.20
-    plugin: autotools
-    override-pull: |
-      git clone https://github.com/libguestfs/supermin.git .
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-supermin-gnulib-submodule-url.patch
-      git submodule update --recursive --force
-    override-build: |
-      ./bootstrap
-      ./autogen.sh
-      make -C init -j6 CC=musl-gcc
-      snapcraftctl build
-    build-packages:
-      - e2fslibs-dev
-      - gawk
-      - ocaml-nox
-      - ocaml-findlib
-      - perl-doc
-      - musl-tools
-      - dpkg-dev
-      - librpm-dev
-      - cpio
   fuse:
     source: https://git.launchpad.net/ubuntu/+source/fuse
     source-type: git
@@ -196,7 +85,7 @@ parts:
     stage:
       - $exclude
   libguestfs:
-    after: [diskimage-builder,fuse,qemu,supermin]
+    after: [diskimage-builder,fuse]
     source: https://github.com/libguestfs/libguestfs.git
     source-type: git
     source-branch: v1.40.2
@@ -204,7 +93,7 @@ parts:
     build-environment:
       - PYTHON: /snap/$SNAPCRAFT_PROJECT_NAME/current/usr/bin/python3
       - QEMU_CPU: "$(dpkg-architecture -qDEB_HOST_GNU_CPU | sed -r -e 's,i[456]86,i386,' -e 's,sparc.*,sparc64,' -e 's,powerpc(64.*)?,ppc64,' -e 's,arm.*,arm,')"
-      - QEMU: $SNAPCRAFT_STAGE/bin/qemu-system-$QEMU_CPU
+      - QEMU: /usr/bin/qemu-system-$QEMU_CPU
     override-build: |
       patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-autogen.patch
       patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-m4-guestfs-qemu.patch
@@ -235,6 +124,7 @@ parts:
       - --disable-haskell
       - --disable-java
       - --disable-golang
+      - --disable-python
       - --disable-perl
       - --disable-php
       - --disable-gobject
@@ -246,6 +136,23 @@ parts:
       - libmagic1
       - uuid-runtime
       - libjansson4
+      - libicu60
+      - libxml2
+      - ipxe-qemu-256k-compat-efi-roms
+      - on amd64:
+        - qemu-system-x86
+      - on arm64:
+        - qemu-system-arm
+      - on armhf:
+        - qemu-system-arm
+      - on i386:
+        - qemu-system-x86
+      - on ppc64el:
+        - qemu-system-ppc
+      - on s390x:
+        - qemu-system-s390x
+      - qemu-utils
+      - libslang2
     build-packages:
       - bison
       - flex
@@ -255,6 +162,7 @@ parts:
       - libmagic-dev
       - libreadline-dev
       - libyajl-dev
+      - ocaml-findlib
       - ocaml-nox
       - libgettext-ocaml-dev
       - python3-all-dev
@@ -344,22 +252,31 @@ parts:
       - exfat-fuse
       - exfat-utils
       - dpkg-dev
+      - supermin
+      - ipxe-qemu-256k-compat-efi-roms
+      - libslang2
       - on amd64:
         - linux-image-virtual
         - syslinux
         - extlinux
         - zfs-fuse
+        - qemu-system-x86
       - on arm64:
         - linux-image-virtual
+        - qemu-system-arm
       - on armhf:
         - linux-image-generic
+        - qemu-system-arm
       - on i386:
         - linux-image-virtual
         - syslinux
         - extlinux
         - zfs-fuse
+        - qemu-system-x86
       - on ppc64el:
         - linux-image-virtual
         - zfs-fuse
+        - qemu-system-ppc
       - on s390x:
         - linux-image-virtual
+        - qemu-system-s390x

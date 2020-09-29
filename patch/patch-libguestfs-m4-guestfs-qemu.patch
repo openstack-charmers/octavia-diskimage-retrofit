@@ -7,7 +7,7 @@ index 62616ffff..c959d3650 100644
      test "x$QEMU" = "xno" && AC_MSG_ERROR([qemu must be installed])
  
 -    AC_DEFINE_UNQUOTED([QEMU],["$QEMU"],[Location of qemu binary.])
-+    AC_DEFINE_UNQUOTED([QEMU],["/snap/octavia-diskimage-retrofit/current/bin/qemu-system-$QEMU_CPU"],[Location of qemu binary.])
++    AC_DEFINE_UNQUOTED([QEMU],["/snap/octavia-diskimage-retrofit/current/usr/bin/qemu-system-$QEMU_CPU"],[Location of qemu binary.])
  
      dnl Check that the chosen qemu has virtio-serial support.
      dnl For historical reasons this can be disabled by setting
