@@ -1,12 +1,20 @@
 ---
 sudo: required
-dist: bionic
+dist: focal
 language: python
+comment: |
+  change permissions on lxd socket to allow travis user access
+  (^^ this is a throw-away CI environment, do not do this at home)
 install:
   - pip install tox-travis
-  - sudo snap refresh
-  - sudo snap install --classic snapcraft
-env:
- - ENV=bashate
+  - sudo lxd init --auto
+  - sudo chmod 666 /var/snap/lxd/common/lxd/unix.socket
+  - lxc profile device add default kvm unix-char path=/dev/kvm
+matrix:
+  include:
+    - name: lint
+      env: ENV=bashate
+    - name: build
+      env: ENV=build-and-test
 script:
  - tox -e $ENV
