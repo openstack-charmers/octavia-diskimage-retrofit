@@ -1,0 +1,13 @@
+set -x
+set -eu
+set -o pipefail
+
+# The Octavia Amphora agent assumes eni and ifupdown on Ubuntu
+#
+# We have run into issues with using ifupdown in combination with
+# modern predictable interface naming schemes, let's disable until
+# the agent stops assuming ifupdown. LP: #1896729
+
+cat << EOF | tee /etc/default/grub.d/60-networkinterfacenames.cfg
+GRUB_CMDLINE_LINUX_DEFAULT="\$GRUB_CMDLINE_LINUX_DEFAULT biosdevname=0 net.ifnames=0"
+EOF

@@ -35,10 +35,14 @@ if [[ "${DIB_APT_MINIMAL_CREATE_INTERFACES:-1}" -eq "1" ]]; then
         echo "source /etc/network/interfaces.d/*" >> /etc/network/interfaces
         echo 'Network configuration set to source /etc/network/interfaces.d/*'
     fi
-    for interface in eth0 eth1; do
+    for interface in eth0; do
         cat << EOF | tee /etc/network/interfaces.d/$interface
 auto $interface
-iface $interface inet dhcp
+EOF
+    done
+    for interface in eth1; do
+        cat << EOF | tee /etc/network/interfaces.d/$interface
+allow-hotplug $interface
 EOF
     done
 fi
