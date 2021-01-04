@@ -101,7 +101,7 @@ virt-dib ${DEBUG} \
     --install-type package \
     --extra-packages initramfs-tools \
     --exclude-element dib-python \
-    ${RESIZE} dpkg debian-networking ubuntu-archive \
+    ${RESIZE} dpkg ubuntu-archive \
     ubuntu-cloud-archive ubuntu-ppa \
     haproxy-octavia rebind-sshd no-resolvconf amphora-agent \
     sos keepalived-octavia ipvsadmin pip-cache certs-ramfs \
