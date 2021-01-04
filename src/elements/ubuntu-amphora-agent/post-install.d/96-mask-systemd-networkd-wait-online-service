@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# When the amphora boots the systemd-networkd-wait-online.service fails to
+# detect that the network is indeed up and running and delays the boot time by
+# minutes(!).
+#
+# Despite of cloud-init / netplan having correctly configured systemd-networkd
+# to be IPv6-only, networkctl still has the interface in state 'configuring',
+# so this could be a systemd-networkd bug.
+#
+# LP: #1909976
+systemctl mask systemd-networkd-wait-online.service
