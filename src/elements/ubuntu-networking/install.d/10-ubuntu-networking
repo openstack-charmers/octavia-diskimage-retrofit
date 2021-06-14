@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if [ "$DIB_RELEASE"x = bionicx ]; then
+    # While Ubuntu Bionic defaults to using netplan for network configuration,
+    # we retain ifupdown for compability with the Octavia Amphora agent. For
+    # cloud-init to handle this correctly we need to make sure
+    # /etc/network/interfaces sources /etc/network/interfaces.d.
+    mkdir -p /etc/network/interfaces.d
+    if ! grep -E -q '^source(|-directory) /etc/network/interfaces.d/\*' /etc/network/interfaces; then
+        echo "source /etc/network/interfaces.d/*" >> /etc/network/interfaces
+        echo 'Network configuration set to source /etc/network/interfaces.d/*'
+    fi
+fi

@@ -91,7 +91,6 @@ virt-dib ${DEBUG} \
     --formats raw \
     --name $TEMP_IMAGE_NAME \
     --envvar DISTRO_NAME=ubuntu \
-    --envvar DIB_RELEASE=bionic \
     --envvar DIB_PYTHON_VERSION=3 \
     --envvar DIB_UBUNTU_MIRROR="${DIB_UBUNTU_MIRROR}" \
     --envvar DIB_UBUNTU_CLOUD_ARCHIVE=$DIB_UBUNTU_CLOUD_ARCHIVE \
@@ -103,8 +102,8 @@ virt-dib ${DEBUG} \
     --install-type package \
     --extra-packages initramfs-tools \
     --exclude-element dib-python \
-    ${RESIZE} dpkg ubuntu-archive \
-    ubuntu-cloud-archive ubuntu-ppa \
+    ${RESIZE} retrofit-dynamic-envvar dpkg ubuntu-archive \
+    ubuntu-cloud-archive ubuntu-networking ubuntu-ppa \
     haproxy-octavia rebind-sshd no-resolvconf amphora-agent \
     sos keepalived-octavia ipvsadmin pip-cache certs-ramfs \
     ubuntu-amphora-agent tuning bug1895835
