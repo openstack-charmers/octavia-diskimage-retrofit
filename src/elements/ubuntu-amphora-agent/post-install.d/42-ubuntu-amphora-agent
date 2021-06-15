@@ -21,3 +21,9 @@ cat > /etc/logrotate.d/amphora-agent <<EOF
     copytruncate
 }
 EOF
+
+# Change I30997ae6cc6b8ec724f0e9dcfdfe49356b320ff4 renames
+# /usr/local/bin/udp-masquerade.sh to /usr/local/bin/lvs-masquerade.sh
+# Let's retain a symlink so that the same Amphora can be used for multiple
+# versions.
+ln -sf lvs-masquerade.sh /usr/local/bin/udp-masquerade.sh
