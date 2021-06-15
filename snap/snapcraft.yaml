@@ -54,6 +54,9 @@ parts:
     source: https://opendev.org/openstack/octavia.git
     source-type: git
     source-branch: stable/victoria
+    override-pull: |
+      snapcraftctl pull
+      patch  -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-octavia-elements-amphora-agent-ureadahead.patch
     organize:
       elements/*: usr/local/lib/elements/
   diskimage-builder:

@@ -1,11 +1,23 @@
+From e84165ae1e33985af48abf689d11c3e55048fc4d Mon Sep 17 00:00:00 2001
 From: Frode Nordahl <frode.nordahl@canonical.com>
-Subject: LP: #1690891
+Date: Tue, 15 Jun 2021 09:50:03 +0200
+Subject: [PATCH] Remove ureadahead package
+
+The 'ureadahead' package was removed from Ubuntu at cosmic. The
+last Debian release to distribute the 'readahead' was jessie. The
+pkg-map already removes the package for redhat family of
+distributions, so let's just remove it altogether.
+
+Related-Bug: #1690891
+Change-Id: I0e2df43384f327928f171665b3ce0bb5d60e3560
+Forwarded: https://review.opendev.org/c/openstack/octavia/+/796407
+---
 
 diff --git a/elements/amphora-agent/package-installs.yaml b/elements/amphora-agent/package-installs.yaml
-index bff8da34..76bce355 100644
+index 2bf27e2..b7e75bd 100644
 --- a/elements/amphora-agent/package-installs.yaml
 +++ b/elements/amphora-agent/package-installs.yaml
-@@ -47,7 +47,6 @@ screen:
+@@ -61,7 +61,6 @@
  socat:
  tcpdump:
  ubuntu-cloudimage-keyring:
@@ -13,3 +25,27 @@ index bff8da34..76bce355 100644
  uuid-runtime:
  vim-tiny:
  vlan:
+diff --git a/elements/amphora-agent/pkg-map b/elements/amphora-agent/pkg-map
+index 501231d..3479e45 100644
+--- a/elements/amphora-agent/pkg-map
++++ b/elements/amphora-agent/pkg-map
+@@ -21,11 +21,6 @@
+         "screen": "",
+         "dkms": ""
+       }
+-    },
+-    "ubuntu": {
+-      "focal": {
+-        "ureadahead": ""
+-      }
+     }
+   },
+   "family": {
+@@ -44,7 +39,6 @@
+       "uuid-runtime": "",
+       "ubuntu-cloudimage-keyring": "",
+       "vim-tiny": "",
+-      "ureadahead": "",
+       "apt-transport-https": "",
+       "pollinate": "",
+       "ifupdown": "",
