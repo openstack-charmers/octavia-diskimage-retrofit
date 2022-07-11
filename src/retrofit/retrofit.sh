@@ -85,8 +85,8 @@ if [ -n "$RESIZE" ]; then
 fi
 
 virt-dib ${DEBUG} \
-    -B $SNAP/lib/python3.6/site-packages/diskimage_builder/lib \
-    -p $SNAP/lib/python3.6/site-packages/diskimage_builder/elements \
+    -B $SNAP/lib/python3.10/site-packages/diskimage_builder/lib \
+    -p $SNAP/lib/python3.10/site-packages/diskimage_builder/elements \
     -p $SNAP/usr/local/lib/elements \
     --formats raw \
     --name $TEMP_IMAGE_NAME \
@@ -98,7 +98,7 @@ virt-dib ${DEBUG} \
     --envvar DIB_UBUNTU_PPA=$DIB_UBUNTU_PPA \
     --envvar DIB_OCTAVIA_AMP_USE_NFTABLES=$DIB_OCTAVIA_AMP_USE_NFTABLES \
     --envvar http_proxy="${http_proxy}" \
-    --python $SNAP/usr/bin/python3 \
+    --python /usr/bin/python3 \
     --install-type package \
     --extra-packages initramfs-tools \
     --exclude-element dib-python \

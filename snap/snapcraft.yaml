@@ -1,13 +1,12 @@
 name: octavia-diskimage-retrofit
 icon: src/icon.svg
-version: script
-version-script: bin/version
+adopt-info: retrofit
 grade: stable
 summary: tool for retrofitting cloud images for use as Octavia Amphora image.
 description: |
   tool for retrofitting cloud images for use as Octavia Amphora image.
 confinement: devmode
-base: core18
+base: core22
 architectures:
   - build-on: amd64
   - build-on: i386
@@ -29,8 +28,9 @@ layout:
 environment:
   LD_LIBRARY_PATH: $SNAP/lib:$SNAP/lib/$SNAPCRAFT_ARCH_TRIPLET:$SNAP/usr/lib:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET
   PATH: $SNAP/usr/sbin:$SNAP/usr/bin:$SNAP/sbin:$SNAP/bin:$PATH
-  LIBGUESTFS_PATH: $SNAP/usr/local/lib/guestfs/appliance
+  LIBGUESTFS_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/guestfs/appliance
   TMPDIR: $SNAP_COMMON/tmp
+  PYTHONPATH: $SNAP/usr/lib/python3/dist-packages:$SNAP/lib/python3.10/site-packages
 apps:
   octavia-diskimage-retrofit:
     command: bin/retrofit.sh
@@ -42,6 +42,9 @@ parts:
   retrofit:
     plugin: dump
     source: src/retrofit
+    override-stage: |
+      craftctl default
+      craftctl set version=$(git -C $CRAFT_PROJECT_DIR describe --always | sed -e 's/-/+git/;y/-/./' | sed -s 's/^v//')
     organize:
       retrofit.sh: bin/retrofit.sh
   local-elements:
@@ -55,7 +58,7 @@ parts:
     source-type: git
     source-branch: stable/wallaby
     override-pull: |
-      snapcraftctl pull
+      craftctl default
       patch  -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-octavia-elements-amphora-agent-ureadahead.patch
     organize:
       elements/*: usr/local/lib/elements/
@@ -67,58 +70,42 @@ parts:
     override-build: |
       patch -p1 < $CRAFT_PROJECT_DIR/patch/patch-diskimage-builder-manifests-fix-chown.patch
       find diskimage_builder/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*python$/#\!\/usr\/bin\/env python3/'
-      snapcraftctl build
-  fuse:
-    source: https://git.launchpad.net/ubuntu/+source/fuse
-    source-type: git
-    source-branch: ubuntu/bionic
-    plugin: autotools
-    override-build: |
-      dpkg-source --before-build .
-      autoreconf
-      snapcraftctl build
-    override-stage: |
-      snapcraftctl stage
-      chmod 0755 bin/fusermount
-    filesets:
-      exclude:
-        - -dev
+      craftctl default
     stage:
-      - $exclude
+      - -bin/python
+      - -bin/python3
+      - -bin/python3.10
+      - -lib64
   libguestfs:
-    after: [diskimage-builder,fuse]
-    source: https://github.com/libguestfs/libguestfs.git
+    after: [diskimage-builder]
+    source: https://git.launchpad.net/ubuntu/+source/libguestfs
     source-type: git
-    source-branch: v1.40.2
+    source-tag: ubuntu/jammy
     plugin: autotools
     build-environment:
-      - PYTHON: /snap/$SNAPCRAFT_PROJECT_NAME/current/usr/bin/python3
+      - PYTHON: /usr/bin/python3
       - QEMU_CPU: "$(dpkg-architecture -qDEB_HOST_GNU_CPU | sed -r -e 's,i[456]86,i386,' -e 's,sparc.*,sparc64,' -e 's,powerpc(64.*)?,ppc64,' -e 's,arm.*,arm,')"
-      - QEMU: /usr/bin/qemu-system-$QEMU_CPU
+      - QEMU: /snap/$CRAFT_PROJECT_NAME/current/usr/bin/qemu-system-$QEMU_CPU
     override-build: |
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-autogen.patch
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-m4-guestfs-qemu.patch
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-po-Don-t-fail-installation-if-parts-of-translated-do.patch
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-ocaml-lgnu.patch
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-ocaml-examples-gnulib.patch
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-dib-feature-modify-image.patch
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-appliance-init-resolvconf.patch
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-ppc64el-cap-htm.patch
-      mkdir -p /snap/$SNAPCRAFT_PROJECT_NAME
-      ln -sf $SNAPCRAFT_STAGE /snap/$SNAPCRAFT_PROJECT_NAME/current
-      snapcraftctl build
-      rm -f /snap/$SNAPCRAFT_PROJECT_NAME/current
-      rmdir /snap/$SNAPCRAFT_PROJECT_NAME
+      sed -ie 's/^# deb-src/deb-src/' /etc/apt/sources.list; apt -y update
+      apt build-dep -y libguestfs
+      mkdir -p /snap/$CRAFT_PROJECT_NAME
+      ln -sf $CRAFT_PART_INSTALL /snap/$CRAFT_PROJECT_NAME/current
+      dpkg-source --before-build .
+      autoreconf
+      craftctl default
+      rm -f /snap/$CRAFT_PROJECT_NAME/current
+      rmdir /snap/$CRAFT_PROJECT_NAME
     override-prime: |
-      mkdir -p usr/local/lib/guestfs/appliance
-      mkdir -p /snap/$SNAPCRAFT_PROJECT_NAME
-      ln -sf $SNAPCRAFT_STAGE /snap/$SNAPCRAFT_PROJECT_NAME/current
-      env -i LIBGUESTFS_PATH=$SNAPCRAFT_STAGE/lib/guestfs LD_LIBRARY_PATH=$SNAPCRAFT_STAGE/lib:$SNAPCRAFT_STAGE/lib/$SNAPCRAFT_ARCH_TRIPLET:$SNAPCRAFT_STAGE/usr/lib:$SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET PATH=$SNAPCRAFT_STAGE/usr/sbin:$SNAPCRAFT_STAGE/usr/bin:$SNAPCRAFT_STAGE/sbin:$SNAPCRAFT_STAGE/bin:/usr/sbin:/usr/bin:/sbin:/bin LIBGUESTFS_DEBUG=1 LIBGUESTFS_TRACE=1 libguestfs-make-fixed-appliance $SNAPCRAFT_PRIME/usr/local/lib/guestfs/appliance
-      rm -f /snap/$SNAPCRAFT_PROJECT_NAME/current
-      rmdir /snap/$SNAPCRAFT_PROJECT_NAME
-      chmod 0644 usr/local/lib/guestfs/appliance/kernel
-      snapcraftctl prime
-    configflags:
+      mkdir -p usr/lib/$CRAFT_ARCH_TRIPLET/guestfs/appliance
+      mkdir -p /snap/$CRAFT_PROJECT_NAME
+      ln -sf $CRAFT_STAGE /snap/$CRAFT_PROJECT_NAME/current
+      env -i LIBGUESTFS_PATH=$CRAFT_STAGE/usr/lib/guestfs LD_LIBRARY_PATH=$CRAFT_STAGE/lib:$CRAFT_STAGE/lib/$CRAFT_ARCH_TRIPLET:$CRAFT_STAGE/usr/lib:$CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET PATH=$CRAFT_STAGE/usr/sbin:$CRAFT_STAGE/usr/bin:$CRAFT_STAGE/sbin:$CRAFT_STAGE/bin:/usr/sbin:/usr/bin:/sbin:/bin LIBGUESTFS_DEBUG=1 LIBGUESTFS_TRACE=1 libguestfs-make-fixed-appliance usr/lib/$CRAFT_ARCH_TRIPLET/guestfs/appliance
+      rm -f /snap/$CRAFT_PROJECT_NAME/current
+      rmdir /snap/$CRAFT_PROJECT_NAME
+      chmod 0644 usr/lib/$CRAFT_ARCH_TRIPLET/guestfs/appliance/kernel
+      craftctl default
+    autotools-configure-parameters:
       - --disable-silent-rules
       - --disable-gnulib-tests
       - --with-readline
@@ -133,134 +120,13 @@ parts:
       - --disable-erlang
       - --disable-ruby
       - --without-libvirt
-    stage-packages:
-      - libmagic1
-      - uuid-runtime
-      - libjansson4
-      - libicu60
-      - libxml2
-      - ipxe-qemu-256k-compat-efi-roms
-      - on amd64:
-        - qemu-system-x86
-      - on arm64:
-        - qemu-system-arm
-      - on armhf:
-        - qemu-system-arm
-      - on i386:
-        - qemu-system-x86
-      - on ppc64el:
-        - qemu-system-ppc
-      - on s390x:
-        - qemu-system-s390x
-      - qemu-utils
-      - libslang2
+      - --prefix=/usr
     build-packages:
-      - bison
-      - flex
-      - gperf
-      - libaugeas-dev
-      - gettext
-      - libmagic-dev
-      - libreadline-dev
-      - libyajl-dev
-      - ocaml-findlib
-      - ocaml-nox
-      - libgettext-ocaml-dev
-      - python3-all-dev
-      - libjansson-dev
-      - libhivex-ocaml-dev
-      - perl-doc
-      - bsdmainutils
-      - btrfs-tools
-      - cryptsetup
-      - dash
       - genisoimage
-      - gfs2-utils
-      - hfsplus
-      - iproute2
-      - iputils-ping
-      - iputils-arping
-      - iputils-tracepath
-      - isc-dhcp-client
-      - ldmtool
-      - libaugeas0
-      - libc-bin
-      - libcap2
-      - libhivex0
-      - libjansson4
-      - libpcre3
-      - libsystemd0
-      - libsystemd-dev
-      - libtirpc1
-      - libyara3
-      - mtools
-      - nilfs-tools
-      - ntfs-3g
-      - openssh-client
-      - reiserfsprogs
-      - sysvinit-utils
-      - systemd
-      - vim-tiny
-      - xz-utils
-      - uuid-runtime
-      - acl
-      - attr
-      - bash
-      - binutils
-      - btrfs-progs
-      - bzip2
-      - coreutils
-      - cpio
-      - diffutils
-      - dosfstools
-      - e2fsprogs
-      - f2fs-tools
-      - file
-      - findutils
-      - gawk
-      - gdisk
-      - grep
-      - gzip
-      - jfsutils
-      - kmod
-      - less
-      - libxml2
-      - lsof
-      - lsscsi
-      - lvm2
-      - lzop
-      - mdadm
-      - module-init-tools
-      - parted
-      - pciutils
-      - procps
-      - psmisc
-      - rsync
-      - scrub
-      - sed
-      - sleuthkit
-      - squashfs-tools
-      - strace
-      - tar
-      - udev
-      - util-linux
-      - xfsprogs
-      - zerofree
-      - qemu-utils
-      - curl
-      - kpartx
-      - debootstrap
-      - exfat-fuse
-      - exfat-utils
-      - dpkg-dev
-      - supermin
-      - ipxe-qemu-256k-compat-efi-roms
-      - libslang2
       - on amd64:
         - linux-image-virtual
         - syslinux
         - extlinux
-        - zfs-fuse
         - qemu-system-x86
       - on arm64:
         - linux-image-virtual
@@ -272,12 +138,80 @@ parts:
         - linux-image-virtual
         - syslinux
         - extlinux
-        - zfs-fuse
         - qemu-system-x86
       - on ppc64el:
         - linux-image-virtual
-        - zfs-fuse
         - qemu-system-ppc
       - on s390x:
         - linux-image-virtual
         - qemu-system-s390x
+    stage-packages:
+      - genisoimage
+      - libmagic1
+      - uuid-runtime
+      - libjansson4
+      - libicu70
+      - libxml2
+      - ipxe-qemu-256k-compat-efi-roms
+      - on amd64:
+        - qemu-system-x86
+      - on arm64:
+        - qemu-system-arm
+      - on armhf:
+        - qemu-system-arm
+      - on i386:
+        - qemu-system-x86
+      - on ppc64el:
+        - qemu-system-ppc
+      - on s390x:
+        - qemu-system-s390x
+      - qemu-utils
+      - libslang2
+      - libfuse2
+      - fuse
+  guestfs-tools:
+    after: [libguestfs]
+    source: https://salsa.debian.org/libvirt-team/guestfs-tools.git
+    source-type: git
+    source-tag: debian/1.46.1-4
+    plugin: autotools
+    override-pull: |
+      sed -ie 's/^# deb-src/deb-src/' /etc/apt/sources.list; apt -y update
+      mkdir _tmp && cd _tmp
+      apt source guestfs-tools
+      mv guestfs-tools-*/* ..
+      cd ..
+      rm -rf _tmp
+    build-environment:
+      - PYTHON: /usr/bin/python3
+      - QEMU_CPU: "$(dpkg-architecture -qDEB_HOST_GNU_CPU | sed -r -e 's,i[456]86,i386,' -e 's,sparc.*,sparc64,' -e 's,powerpc(64.*)?,ppc64,' -e 's,arm.*,arm,')"
+      - QEMU: /snap/$CRAFT_PROJECT_NAME/current/usr/bin/qemu-system-$QEMU_CPU
+    override-build: |
+      sed -ie 's/^# deb-src/deb-src/' /etc/apt/sources.list; apt -y update
+      apt build-dep -y guestfs-tools
+      patch -p1 < $CRAFT_PROJECT_DIR/patch/patch-libguestfs-dib-feature-modify-image.patch
+      mkdir -p /snap/$CRAFT_PROJECT_NAME
+      ln -sf $CRAFT_STAGE /snap/$CRAFT_PROJECT_NAME/current
+      dpkg-source --before-build .
+      autoreconf
+      craftctl default
+      rm -f /snap/$CRAFT_PROJECT_NAME/current
+      rmdir /snap/$CRAFT_PROJECT_NAME
+    autotools-configure-parameters:
+      - --disable-silent-rules
+      - --disable-gnulib-tests
+      - --with-readline
+      - --disable-haskell
+      - --disable-java
+      - --disable-golang
+      - --disable-python
+      - --disable-perl
+      - --disable-php
+      - --disable-gobject
+      - --disable-lua
+      - --disable-erlang
+      - --disable-ruby
+      - --without-libvirt
+      - --prefix=/usr
+    stage-packages:
+      - libc6
