@@ -65,6 +65,7 @@ parts:
     source-type: git
     source-branch: 2.25.0
     override-build: |
+      patch -p1 < $CRAFT_PROJECT_DIR/patch/patch-diskimage-builder-manifests-fix-chown.patch
       find diskimage_builder/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*python$/#\!\/usr\/bin\/env python3/'
       snapcraftctl build
   fuse:

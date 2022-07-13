@@ -1,0 +1,11 @@
+diff --git a/diskimage_builder/elements/manifests/cleanup.d/01-copy-manifests-dir b/diskimage_builder/elements/manifests/cleanup.d/01-copy-manifests-dir
+index 3ac19256..ed270acd 100755
+--- a/diskimage_builder/elements/manifests/cleanup.d/01-copy-manifests-dir
++++ b/diskimage_builder/elements/manifests/cleanup.d/01-copy-manifests-dir
+@@ -39,5 +39,5 @@ cp --no-preserve=ownership -rv ${MANIFEST_IMAGE_PATH} ${DIB_MANIFEST_SAVE_DIR}
+ # Lock down permissions on the manifest files inside the image to
+ # root.  We don't want regular users being able to see what might
+ # contain a password, etc.
+-find ${MANIFEST_IMAGE_PATH} -type f | xargs sudo chown root:root # dib-lint: safe_sudo
++find ${MANIFEST_IMAGE_PATH} -type f | xargs sudo chown 0:0 # dib-lint: safe_sudo
+ find ${MANIFEST_IMAGE_PATH} -type f | xargs sudo chmod 600 # dib-lint: safe_sudo
