@@ -1,3 +1,9 @@
+Author: Frode Nordahl <frode.nordahl@canonical.com>
+Description: The system password database is not always available depending on
+ commands being run within or outside chroot.  Do not rely on uid/gid lookup.
+Forwarded: not-needed
+Last-Update: XXXX-XX-XX
+
 diff --git a/diskimage_builder/elements/manifests/cleanup.d/01-copy-manifests-dir b/diskimage_builder/elements/manifests/cleanup.d/01-copy-manifests-dir
 index 3ac19256..ed270acd 100755
 --- a/diskimage_builder/elements/manifests/cleanup.d/01-copy-manifests-dir

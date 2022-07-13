@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/snap/octavia-diskimage-retrofit/current/bin/sh -e
 
 # We need our own tmp directory for fuse-support
 mkdir -p $SNAP_COMMON/tmp
