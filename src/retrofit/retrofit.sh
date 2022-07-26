@@ -1,4 +1,4 @@
-#!/bin/bash
+#!%%INTERPRETER%%
 
 set -e
 
@@ -85,8 +85,8 @@ if [ -n "$RESIZE" ]; then
 fi
 
 virt-dib ${DEBUG} \
-    -B $SNAP/lib/python3.6/site-packages/diskimage_builder/lib \
-    -p $SNAP/lib/python3.6/site-packages/diskimage_builder/elements \
+    -B $SNAP/usr/lib/python3.10/site-packages/diskimage_builder/lib \
+    -p $SNAP/usr/lib/python3.10/site-packages/diskimage_builder/elements \
     -p $SNAP/usr/local/lib/elements \
     --formats raw \
     --name $TEMP_IMAGE_NAME \

@@ -1,0 +1,20 @@
+diff --git a/dib/dib.ml b/dib/dib.ml
+index 94ad300..7a817aa 100644
+--- a/dib/dib.ml
++++ b/dib/dib.ml
+@@ -327,13 +327,8 @@ if [ -n \"$user\" ]; then
+ fi
+ 
+ if [ -z \"$preserve_env\" ]; then
+-  for envvar in `awk 'BEGIN{for (i in ENVIRON) {print i}}'`; do
+-    case \"$envvar\" in
+-      PATH | USER | USERNAME | HOSTNAME | TERM | LANG | HOME | SHELL | LOGNAME ) ;;
+-      BASH_FUNC_* ) unset -f $envvar ;;
+-      *) unset $envvar ;;
+-    esac
+-  done
++  exec -c $@
++  # NOT REACHED
+ fi
+ # TMPDIR needs to be unset, regardless of -E
+ unset TMPDIR

@@ -1,36 +1,38 @@
 name: octavia-diskimage-retrofit
 icon: src/icon.svg
-version: script
-version-script: bin/version
+adopt-info: retrofit
 grade: stable
 summary: tool for retrofitting cloud images for use as Octavia Amphora image.
 description: |
   tool for retrofitting cloud images for use as Octavia Amphora image.
-confinement: devmode
-base: core18
+confinement: classic
+base: core22
 architectures:
   - build-on: amd64
   - build-on: i386
   - build-on: arm64
   - build-on: ppc64el
 
-layout:
-  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/qemu:
-    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/qemu
-  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio:
-    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio
-  /usr/share/qemu:
-    bind: $SNAP/usr/share/qemu
-  /usr/share/seabios:
-    bind: $SNAP/usr/share/seabios
-  /usr/lib/ipxe:
-    bind: $SNAP/usr/lib/ipxe
-
 environment:
-  LD_LIBRARY_PATH: $SNAP/lib:$SNAP/lib/$SNAPCRAFT_ARCH_TRIPLET:$SNAP/usr/lib:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET
-  PATH: $SNAP/usr/sbin:$SNAP/usr/bin:$SNAP/sbin:$SNAP/bin:$PATH
-  LIBGUESTFS_PATH: $SNAP/usr/local/lib/guestfs/appliance
+  # To enable execution of binaries from snap, and the host operating system,
+  # we patch all ELF binaries shipped with the snap in the 'patchelf' part
+  # instead of using the LD_LIBRARY_PATH environment variable.
+  #
+  # This is required because both libc and other standard libraries hard code
+  # the path to /bin/sh, and uses that to execute other binaries.  The path to
+  # /bin/sh is part of POSIX, so we can't really blame them.  Any attempt to
+  # execute /bin/sh from host operating system with LD_LIBRARY_PATH pointing
+  # to the snap will make the execution abort or fault.
+  #
+  # In addition to that the diskimage builder elements in multiple parts of
+  # this snap contain shell code which may try to execute host binaries.
+  LD_LIBRARY_PATH: ""
+  PATH: $SNAP/usr/sbin:$SNAP/usr/bin:$SNAP/sbin:$SNAP/bin
+  LIBGUESTFS_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/guestfs/appliance
   TMPDIR: $SNAP_COMMON/tmp
+  PYTHONHOME: $SNAP
+  PYTHONPATH: $SNAP/usr/lib/python3/dist-packages:$SNAP/usr/lib/python3.10/site-packages:$SNAP/usr/lib/python3.10:$SNAP/usr/lib/python3.10/lib-dynload
+  SHELL: /snap/octavia-diskimage-retrofit/current/bin/sh
 apps:
   octavia-diskimage-retrofit:
     command: bin/retrofit.sh
@@ -42,82 +44,278 @@ parts:
   retrofit:
     plugin: dump
     source: src/retrofit
+    override-stage: |
+      craftctl default
+      sed -ie "s,%%INTERPRETER%%,/snap/$CRAFT_PROJECT_NAME/current/bin/bash," \
+          bin/retrofit.sh
+      craftctl set version=$(git -C $CRAFT_PROJECT_DIR describe --always | sed -e 's/-/+git/;y/-/./' | sed -s 's/^v//')
     organize:
       retrofit.sh: bin/retrofit.sh
+    # These binaries are shipped with the base snap, but we can't use those
+    # because we need to do without the LD_LIBRARY_PATH.  See full explanation
+    # in the `environment` section.
+    stage-packages:
+      - bash
+      - coreutils
   local-elements:
     plugin: dump
     source: src
     organize: 
       elements/*: usr/local/lib/elements/
+    override-stage: |
+      find $CRAFT_PART_INSTALL/usr/local/lib/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*bash$/#\!\/usr\/bin\/env bash/'
+      find $CRAFT_PART_INSTALL/usr/local/lib/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*\/sh$/#\!\/usr\/bin\/env sh/'
+      craftctl default
   octavia-elements:
     plugin: dump
     source: https://opendev.org/openstack/octavia.git
     source-type: git
     source-branch: stable/wallaby
     override-pull: |
-      snapcraftctl pull
-      patch  -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-octavia-elements-amphora-agent-ureadahead.patch
+      craftctl default
+      patch  -p1 < $CRAFT_PROJECT_DIR/patch/patch-octavia-elements-amphora-agent-ureadahead.patch
     organize:
       elements/*: usr/local/lib/elements/
+    override-stage: |
+      find $CRAFT_PART_INSTALL/usr/local/lib/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*bash$/#\!\/usr\/bin\/env bash/'
+      find $CRAFT_PART_INSTALL/usr/local/lib/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*\/sh$/#\!\/usr\/bin\/env sh/'
+      craftctl default
   diskimage-builder:
-    plugin: python
+    # We do not use the Python plugin because in a classic snap we install a
+    # complete Python environment and not just a venv.
+    plugin: dump
     source: https://opendev.org/openstack/diskimage-builder.git
     source-type: git
     source-branch: 2.25.0
+    build-environment:
+      - PATH: $CRAFT_PART_INSTALL/usr/bin:$PATH
+      - PYTHONHOME: $CRAFT_PART_INSTALL
+      - PYTHONPATH: $CRAFT_PART_INSTALL/usr/lib/python3/dist-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10/site-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10:$CRAFT_PART_INSTALL/usr/lib/python3.10/lib-dynload
     override-build: |
-      find diskimage_builder/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*python$/#\!\/usr\/bin\/env python3/'
-      snapcraftctl build
-  fuse:
-    source: https://git.launchpad.net/ubuntu/+source/fuse
+      patch -p1 < $CRAFT_PROJECT_DIR/patch/patch-diskimage-builder-manifests-fix-chown.patch
+      find diskimage_builder/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*bash$/#\!\/usr\/bin\/env bash/'
+      find diskimage_builder/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*\/sh$/#\!\/usr\/bin\/env sh/'
+
+      python3 setup.py build
+      python3 setup.py install --prefix $CRAFT_PART_INSTALL/usr
+
+      # No need to run the dump plugins default build step
+    override-stage: |
+      find $CRAFT_PART_INSTALL -type f -print0 | xargs -0 sed -i '1 s/^#\!.*python/#\!\/usr\/bin\/env python3/'
+      craftctl default
+    stage-packages:
+      - libpython3.10
+      - libpython3.10-minimal
+      - libpython3.10-stdlib
+      - python3-minimal
+      - python3.10-minimal
+      - python3-pip
+      - python3-setuptools
+      - python3-distutils
+      - python3-pkg-resources
+      - python3-py
+      - python3-babel
+      - python3-networkx
+      - python3-pbr
+      - python3-yaml
+      - python3-flake8
+      - python3-six
+      - python3-stevedore
+  qemu:
+    source: https://git.launchpad.net/ubuntu/+source/qemu
     source-type: git
-    source-branch: ubuntu/bionic
+    source-branch: ubuntu/jammy
     plugin: autotools
     override-build: |
       dpkg-source --before-build .
-      autoreconf
-      snapcraftctl build
-    override-stage: |
-      snapcraftctl stage
-      chmod 0755 bin/fusermount
-    filesets:
-      exclude:
-        - -dev
-    stage:
-      - $exclude
+      rm -rf build && mkdir build && cd build
+      ../configure \
+          --extra-cflags='-g -O2 -fdebug-prefix-map=/home/ubuntu/qemu-2.11+dfsg=. -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -DVENDOR_UBUNTU' \
+          --extra-ldflags='-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,--as-needed' \
+          --prefix=/snap/$CRAFT_PROJECT_NAME/current/usr \
+          --bindir=bin \
+          --libdir=lib/$CRAFT_ARCH_TRIPLET \
+          --libexecdir=lib/qemu \
+          --datadir=share/qemu \
+          --sysconfdir=/var/snap/$CRAFT_PROJECT_NAME/common \
+          --localstatedir=/var/snap/$CRAFT_PROJECT_NAME/common \
+          --interp-prefix=/var/snap/$CRAFT_PROJECT_NAME/common/etc/qemu-binfmt/%M \
+          --firmwarepath="/snap/$CRAFT_PROJECT_NAME/current/usr/share/qemu:/snap/$CRAFT_PROJECT_NAME/current/usr/share/seabios:/snap/$CRAFT_PROJECT_NAME/current/usr/lib/ipxe/qemu" \
+          --disable-blobs \
+          --disable-strip \
+          --disable-user \
+          --enable-modules \
+          --enable-linux-aio \
+          --enable-attr \
+          --enable-virtfs \
+          --enable-cap-ng \
+          --enable-curl \
+          --enable-fdt \
+          --enable-gnutls \
+          --disable-gtk \
+          --disable-vte \
+          --disable-sdl \
+          --disable-vnc \
+          --disable-vnc-sasl \
+          --disable-vnc-jpeg \
+          --disable-vnc-png \
+          --disable-spice \
+          --disable-curses \
+          --disable-xen \
+          --enable-seccomp \
+          --enable-xfsctl \
+          --enable-kvm \
+          --enable-vhost-net \
+          --target-list="aarch64-softmmu ppc64-softmmu riscv64-softmmu s390x-softmmu x86_64-softmmu" \
+          --with-git-submodules=ignore
+          make -j${CRAFT_PARALLEL_BUILD_COUNT}
+          make install DESTDIR=${CRAFT_PART_INSTALL}
+    build-packages:
+      - libaio-dev
+      - acpica-tools
+      - libattr1-dev
+      - libcap-dev
+      - libcap-ng-dev
+      - libnuma-dev
+      - zlib1g-dev
+      - uuid-dev
+      - device-tree-compiler
+      - texinfo
+      - libfdt-dev
+      - gnutls-dev
+      - libseccomp-dev
+      - xfslibs-dev
+      - libcapstone-dev
+      - pkg-config
+      - libpixman-1-dev
+      - python-all-dev
+      - libglib2.0-dev
+      - glusterfs-common
+      - gnutls-dev
+      - libaio-dev
+      - libasound2-dev
+      - libbrlapi-dev
+      - libcacard-dev
+      - libcap-ng-dev
+      - libcurl4-gnutls-dev
+      - libdrm-dev
+      - libepoxy-dev
+      - libfdt-dev
+      - libfuse3-dev
+      - libgbm-dev
+      - libglusterfs-dev
+      - libgtk-3-dev
+      - libibumad-dev
+      - libibverbs-dev
+      - libiscsi-dev
+      - libjack-dev
+      - libjpeg-dev
+      - libncurses-dev
+      - libnuma-dev
+      - libpixman-1-dev
+      - libpmem-dev
+      - libpng-dev
+      - libpulse-dev
+      - librbd-dev
+      - librdmacm-dev
+      - libsasl2-dev
+      - libsdl2-dev
+      - libseccomp-dev
+      - libslirp-dev
+      - libspice-server-dev
+      - libssh-dev
+      - libudev-dev
+      - liburing-dev
+      - libusb-1.0-0-dev
+      - libusbredirparser-dev
+      - libvirglrenderer-dev
+      - libvte-2.91-dev
+      - libxen-dev
+      - libzstd-dev
+      - meson
+      - nettle-dev
+      - ninja-build
+      - python3
+      - python3-sphinx
+      - python3-sphinx-rtd-theme
+      - texinfo
+      - uuid-dev
+      - xfslibs-dev
+      - zlib1g-dev
+      - device-tree-compiler
+      - fcode-utils
+      - gcc-alpha-linux-gnu
+      - gcc-hppa-linux-gnu
+      - gcc-powerpc64-linux-gnu
+      - gcc-riscv64-linux-gnu
+      - gcc-s390x-linux-gnu
+      - gcc-sparc64-linux-gnu
+      - libc6.1-dev-alpha-cross
+      - xsltproc
+    stage-packages:
+      # Note that some stage-packages are omitted here because of collissions
+      # with libguestfs part.
+      - seabios
+      - ipxe-qemu
+      - libnuma1
+      - libaio1
+      - libcapstone4
+      - libfdt1
+      - libpixman-1-0
+      - libslang2
+      - liburing2
+      - libpmem1
+      - librdmacm1
+      - libpixman-1-0
+      - libcapstone4
+      - libfdt1
+      - libibverbs1
+      - libslirp0
+      - qemu-system-data
+    organize:
+      snap/$CRAFT_PROJECT_NAME/current/: /
   libguestfs:
-    after: [diskimage-builder,fuse]
-    source: https://github.com/libguestfs/libguestfs.git
+    after: [diskimage-builder,qemu]
+    source: https://git.launchpad.net/ubuntu/+source/libguestfs
     source-type: git
-    source-branch: v1.40.2
+    source-tag: ubuntu/jammy
     plugin: autotools
     build-environment:
-      - PYTHON: /snap/$SNAPCRAFT_PROJECT_NAME/current/usr/bin/python3
+      - PYTHON: /snap/$CRAFT_PROJECT_NAME/current/usr/bin/python3
       - QEMU_CPU: "$(dpkg-architecture -qDEB_HOST_GNU_CPU | sed -r -e 's,i[456]86,i386,' -e 's,sparc.*,sparc64,' -e 's,powerpc(64.*)?,ppc64,' -e 's,arm.*,arm,')"
-      - QEMU: /usr/bin/qemu-system-$QEMU_CPU
+      - QEMU: /snap/$CRAFT_PROJECT_NAME/current/usr/bin/qemu-system-$QEMU_CPU
+      - SHELL: /snap/octavia-diskimage-retrofit/current/bin/sh
     override-build: |
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-autogen.patch
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-m4-guestfs-qemu.patch
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-po-Don-t-fail-installation-if-parts-of-translated-do.patch
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-ocaml-lgnu.patch
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-ocaml-examples-gnulib.patch
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-dib-feature-modify-image.patch
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-appliance-init-resolvconf.patch
-      patch -p1 < $SNAPCRAFT_PROJECT_DIR/patch/patch-libguestfs-ppc64el-cap-htm.patch
-      mkdir -p /snap/$SNAPCRAFT_PROJECT_NAME
-      ln -sf $SNAPCRAFT_STAGE /snap/$SNAPCRAFT_PROJECT_NAME/current
-      snapcraftctl build
-      rm -f /snap/$SNAPCRAFT_PROJECT_NAME/current
-      rmdir /snap/$SNAPCRAFT_PROJECT_NAME
+      rm -rf /snap/$CRAFT_PROJECT_NAME
+      mkdir -p /snap/$CRAFT_PROJECT_NAME
+      ln -sf $CRAFT_STAGE /snap/$CRAFT_PROJECT_NAME/current
+      if [ ! -d /snap/$CRAFT_PROJECT_NAME/current/bin ]; then
+          mkdir /snap/$CRAFT_PROJECT_NAME/current/bin
+      fi
+      ln -sf /bin/dash /snap/$CRAFT_PROJECT_NAME/current/bin/sh
+      dpkg-source --before-build .
+      autoreconf
+      craftctl default
+      rm -f /snap/$CRAFT_PROJECT_NAME/current/bin/sh
+      rm -f /snap/$CRAFT_PROJECT_NAME/current
+      rmdir /snap/$CRAFT_PROJECT_NAME
     override-prime: |
-      mkdir -p usr/local/lib/guestfs/appliance
-      mkdir -p /snap/$SNAPCRAFT_PROJECT_NAME
-      ln -sf $SNAPCRAFT_STAGE /snap/$SNAPCRAFT_PROJECT_NAME/current
-      env -i LIBGUESTFS_PATH=$SNAPCRAFT_STAGE/lib/guestfs LD_LIBRARY_PATH=$SNAPCRAFT_STAGE/lib:$SNAPCRAFT_STAGE/lib/$SNAPCRAFT_ARCH_TRIPLET:$SNAPCRAFT_STAGE/usr/lib:$SNAPCRAFT_STAGE/usr/lib/$SNAPCRAFT_ARCH_TRIPLET PATH=$SNAPCRAFT_STAGE/usr/sbin:$SNAPCRAFT_STAGE/usr/bin:$SNAPCRAFT_STAGE/sbin:$SNAPCRAFT_STAGE/bin:/usr/sbin:/usr/bin:/sbin:/bin LIBGUESTFS_DEBUG=1 LIBGUESTFS_TRACE=1 libguestfs-make-fixed-appliance $SNAPCRAFT_PRIME/usr/local/lib/guestfs/appliance
-      rm -f /snap/$SNAPCRAFT_PROJECT_NAME/current
-      rmdir /snap/$SNAPCRAFT_PROJECT_NAME
-      chmod 0644 usr/local/lib/guestfs/appliance/kernel
-      snapcraftctl prime
-    configflags:
+      # appliance
+      mkdir -p usr/lib/$CRAFT_ARCH_TRIPLET/guestfs/appliance
+      mkdir -p /snap/$CRAFT_PROJECT_NAME
+      ln -sf $CRAFT_STAGE /snap/$CRAFT_PROJECT_NAME/current
+      env -i LIBGUESTFS_PATH=$CRAFT_STAGE/usr/lib/guestfs LD_LIBRARY_PATH=$CRAFT_STAGE/lib:$CRAFT_STAGE/lib/$CRAFT_ARCH_TRIPLET:$CRAFT_STAGE/usr/lib:$CRAFT_STAGE/usr/lib/$CRAFT_ARCH_TRIPLET PATH=$CRAFT_STAGE/usr/sbin:$CRAFT_STAGE/usr/bin:$CRAFT_STAGE/sbin:$CRAFT_STAGE/bin:/usr/sbin:/usr/bin:/sbin:/bin LIBGUESTFS_DEBUG=1 LIBGUESTFS_TRACE=1 libguestfs-make-fixed-appliance usr/lib/$CRAFT_ARCH_TRIPLET/guestfs/appliance
+      rm -f /snap/$CRAFT_PROJECT_NAME/current
+      rmdir /snap/$CRAFT_PROJECT_NAME
+      chmod 0644 usr/lib/$CRAFT_ARCH_TRIPLET/guestfs/appliance/kernel
+
+      ln -sf gawk usr/bin/awk
+
+      # perform snapcraft default prime steps
+      craftctl default
+    organize:
+      root/stage/: /
+    autotools-configure-parameters:
       - --disable-silent-rules
       - --disable-gnulib-tests
       - --with-readline
@@ -132,151 +330,351 @@ parts:
       - --disable-erlang
       - --disable-ruby
       - --without-libvirt
-    stage-packages:
-      - libmagic1
-      - uuid-runtime
-      - libjansson4
-      - libicu60
-      - libxml2
-      - ipxe-qemu-256k-compat-efi-roms
-      - on amd64:
-        - qemu-system-x86
-      - on arm64:
-        - qemu-system-arm
-      - on armhf:
-        - qemu-system-arm
-      - on i386:
-        - qemu-system-x86
-      - on ppc64el:
-        - qemu-system-ppc
-      - on s390x:
-        - qemu-system-s390x
-      - qemu-utils
-      - libslang2
+      - --prefix=/usr
     build-packages:
-      - bison
-      - flex
-      - gperf
-      - libaugeas-dev
-      - gettext
-      - libmagic-dev
-      - libreadline-dev
-      - libyajl-dev
-      - ocaml-findlib
-      - ocaml-nox
-      - libgettext-ocaml-dev
-      - python3-all-dev
-      - libjansson-dev
-      - libhivex-ocaml-dev
-      - perl-doc
-      - bsdmainutils
-      - btrfs-tools
-      - cryptsetup
-      - dash
       - genisoimage
-      - gfs2-utils
-      - hfsplus
-      - iproute2
-      - iputils-ping
-      - iputils-arping
-      - iputils-tracepath
-      - isc-dhcp-client
-      - ldmtool
-      - libaugeas0
-      - libc-bin
-      - libcap2
-      - libhivex0
-      - libjansson4
-      - libpcre3
-      - libsystemd0
-      - libsystemd-dev
-      - libtirpc1
-      - libyara3
-      - mtools
-      - nilfs-tools
-      - ntfs-3g
-      - openssh-client
-      - reiserfsprogs
-      - sysvinit-utils
-      - systemd
-      - vim-tiny
-      - xz-utils
-      - uuid-runtime
       - acl
       - attr
-      - bash
+      - autoconf
+      - automake
+      - bash-completion
       - binutils
+      - bison
+      - bsdextrautils
+      - bsdmainutils
       - btrfs-progs
       - bzip2
-      - coreutils
       - cpio
-      - diffutils
+      - cryptsetup-bin
+      - curl
+      - db-util
+      - debootstrap
+      - default-jdk
+      - dh-lua
+      - dh-php
+      - dh-python
       - dosfstools
       - e2fsprogs
+      - exfatprogs
+      - extlinux
       - f2fs-tools
+      - fdisk
       - file
-      - findutils
+      - flex
+      - libfuse2
+      - libfuse-dev
       - gawk
       - gdisk
-      - grep
-      - gzip
+      - gem2deb
+      - gfs2-utils
+      - gjs
+      - gobject-introspection
+      - golang-go
+      - gperf
+      - hfsplus
+      - icoutils
+      - iproute2
+      - iputils-arping
+      - iputils-ping
+      - iputils-tracepath
       - jfsutils
       - kmod
+      - kpartx
+      - ldmtool
       - less
-      - libxml2
+      - libacl1-dev
+      - libaugeas-dev
+      - libc-dev-bin
+      - libcap-dev
+      - libconfig-dev
+      - libdbus-1-dev
+      - libextutils-command-perl
+      - libgirepository1.0-dev
+      - libglib2.0-dev
+      - libgtk-3-dev
+      - libintl-perl
+      - libjs-jquery
+      - liblzma-dev
+      - libmagic-dev
+      - libmodule-build-perl
+      - libncurses5-dev
+      - libncursesw5-dev
+      - libpcre2-dev
+      - libreadline-dev
+      - librpm-dev
+      - libselinux1-dev
+      - libstring-shellquote-perl
+      - libsys-virt-perl
+      - libsystemd-dev
+      - libtest-pod-coverage-perl
+      - libtest-pod-perl
+      - libtool
+      - libtsk-dev
+      - libxml2-dev
+      - libxml2-utils
+      - libyajl-dev
+      - libhivex-dev
+      - python3-all-dev
+      - libjansson-dev
+      - libyara-dev
       - lsof
       - lsscsi
       - lvm2
       - lzop
       - mdadm
-      - module-init-tools
+      - kmod
+      - mount
+      - mtools
+      - netpbm
+      - nilfs-tools
+      - openssh-client
+      - parted
+      - pciutils
+      - php-all-dev
+      - pkg-config
+      - po-debconf
+      - po4a
+      - procps
+      - psmisc
+      - python3-all-dev
+      - rake
+      - reiserfsprogs
+      - rsync
+      - scrub
+      - sleuthkit
+      - sqlite3
+      - squashfs-tools
+      - strace
+      - supermin
+      - syslinux
+      - systemd-sysv
+      - systemtap-sdt-dev
+      - udev
+      - uuid-runtime
+      - vim-tiny
+      - xfsprogs
+      - xorriso
+      - xz-utils
+      - zerofree
+      - libgettext-ocaml-dev
+      - libhivex-ocaml-dev
+      - libounit-ocaml-dev
+      - libvirt-ocaml-dev
+      - ocaml-findlib
+      - ocaml-nox
+      - on amd64:
+        - linux-image-virtual
+        - syslinux
+        - extlinux
+      - on arm64:
+        - linux-image-virtual
+      - on armhf:
+        - linux-image-generic
+      - on i386:
+        - linux-image-virtual
+        - syslinux
+        - extlinux
+      - on ppc64el:
+        - linux-image-virtual
+      - on s390x:
+        - linux-image-virtual
+    stage-packages:
+      - genisoimage
+      - libmagic1
+      - uuid-runtime
+      - libjansson4
+      - acl
+      - attr
+      - binutils
+      - bsdextrautils
+      - bsdmainutils
+      - btrfs-progs
+      - bzip2
+      - cpio
+      - cryptsetup-bin
+      - curl
+      - dash
+      - debootstrap
+      - diffutils
+      - dosfstools
+      - e2fsprogs
+      - exfatprogs
+      - extlinux
+      - f2fs-tools
+      - fdisk
+      - file
+      - findutils
+      - gawk
+      - gdisk
+      - gfs2-utils
+      - grep
+      - gzip
+      - hfsplus
+      - iproute2
+      - iputils-arping
+      - iputils-ping
+      - iputils-tracepath
+      - jfsutils
+      - kmod
+      - kpartx
+      - ldmtool
+      - less
+      - libacl1
+      - libaugeas0
+      - libc-bin
+      - libc6
+      - libcap2
+      - libhivex0
+      - libjansson4
+      - libpcre2-8-0
+      - librpm9
+      - libselinux1
+      - libsystemd0
+      - libtirpc3
+      - libtsk19
+      - libyara8
+      - lsof
+      - lsscsi
+      - lzop
+      - mdadm
+      - mount
+      - mtools
+      - nilfs-tools
+      - openssh-client
       - parted
       - pciutils
       - procps
       - psmisc
+      - reiserfsprogs
       - rsync
       - scrub
       - sed
       - sleuthkit
       - squashfs-tools
       - strace
+      - syslinux
+      - systemd-sysv
       - tar
       - udev
       - util-linux
+      - uuid-runtime
+      - vim-tiny
       - xfsprogs
+      - xz-utils
       - zerofree
-      - qemu-utils
-      - curl
-      - kpartx
-      - debootstrap
-      - exfat-fuse
-      - exfat-utils
-      - dpkg-dev
-      - supermin
-      - ipxe-qemu-256k-compat-efi-roms
-      - libslang2
-      - on amd64:
-        - linux-image-virtual
-        - syslinux
-        - extlinux
-        - zfs-fuse
-        - qemu-system-x86
-      - on arm64:
-        - linux-image-virtual
-        - qemu-system-arm
-      - on armhf:
-        - linux-image-generic
-        - qemu-system-arm
-      - on i386:
-        - linux-image-virtual
-        - syslinux
-        - extlinux
-        - zfs-fuse
-        - qemu-system-x86
-      - on ppc64el:
-        - linux-image-virtual
-        - zfs-fuse
-        - qemu-system-ppc
-      - on s390x:
-        - linux-image-virtual
-        - qemu-system-s390x
+      - libfuse2
+      - libfuse3-3
+      - fuse3
+    stage:
+      - -lib64
+  guestfs-tools:
+    after: [libguestfs]
+    source: https://salsa.debian.org/libvirt-team/guestfs-tools.git
+    source-type: git
+    source-tag: debian/1.46.1-4
+    plugin: autotools
+    override-pull: |
+      sed -ie 's/^# deb-src/deb-src/' /etc/apt/sources.list; apt -y update
+      mkdir _tmp && cd _tmp
+      apt source guestfs-tools
+      mv guestfs-tools-*/* ..
+      cd ..
+      rm -rf _tmp
+    build-environment:
+      - OCAMLPATH: $CRAFT_STAGE/usr/lib/ocaml
+      - PYTHON: /snap/$CRAFT_PROJECT_NAME/current/usr/bin/python3
+      - QEMU_CPU: "$(dpkg-architecture -qDEB_HOST_GNU_CPU | sed -r -e 's,i[456]86,i386,' -e 's,sparc.*,sparc64,' -e 's,powerpc(64.*)?,ppc64,' -e 's,arm.*,arm,')"
+      - QEMU: /snap/$CRAFT_PROJECT_NAME/current/usr/bin/qemu-system-$QEMU_CPU
+      - SHELL: /snap/octavia-diskimage-retrofit/current/bin/sh
+    override-build: |
+      patch -p1 < $CRAFT_PROJECT_DIR/patch/patch-libguestfs-dib-feature-modify-image.patch
+      rm -rf /snap/$CRAFT_PROJECT_NAME
+      mkdir -p /snap/$CRAFT_PROJECT_NAME
+      ln -sf $CRAFT_STAGE /snap/$CRAFT_PROJECT_NAME/current
+      dpkg-source --before-build .
+      autoreconf
+      patch -p1 < $CRAFT_PROJECT_DIR/patch/patch-guestfs-tools-dib-fake-sudo-env.patch
+      craftctl default
+      rm -f /snap/$CRAFT_PROJECT_NAME/current
+      rmdir /snap/$CRAFT_PROJECT_NAME
+    autotools-configure-parameters:
+      - --disable-silent-rules
+      - --disable-gnulib-tests
+      - --with-readline
+      - --disable-haskell
+      - --disable-java
+      - --disable-golang
+      - --disable-python
+      - --disable-perl
+      - --disable-php
+      - --disable-gobject
+      - --disable-lua
+      - --disable-erlang
+      - --disable-ruby
+      - --without-libvirt
+      - --prefix=/usr
+    build-packages:
+      - bash-completion
+      - bison
+      - flex
+      - gettext
+      - guestfish
+      - ipxe-qemu
+      - libintl-perl
+      - libjansson-dev
+      - liblzma-dev
+      - libmodule-build-perl
+      - libpcre2-dev
+      - libtinfo-dev
+      - libxml2-dev
+      - libxml2-utils
+      - pkg-config
+      - po4a
+      - sqlite3
+      - xorriso
+      - xz-utils
+  patchelf:
+    after:
+      - retrofit
+      - local-elements
+      - octavia-elements
+      - diskimage-builder
+      - qemu
+      - libguestfs
+      - guestfs-tools
+    plugin: nil
+    build-packages:
+      - patchelf
+    override-prime: |
+      # patchelf
+      #
+      # To allow for a classic snap that works across multiple operating system
+      # runtime environments, we need to ensure all shipped binaries consume
+      # libraries from the core or shipped snap.  We accomplish this by
+      # patching RPATH or interpreter into dynamically linked binaries.
+      #
+      # /snap/core22/current/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+      # /snap/core22/current/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1
+      # /snap/core22/current/lib/powerpc64le-linux-gnu/ld64.so.2
+      # /snap/core22/current/lib/s390x-linux-gnu/ld64.so.1
+      interp_prefix=/snap/core22/current/lib/$CRAFT_ARCH_TRIPLET
+      ld_arch=$(echo $CRAFT_TARGET_ARCH | sed -e 's,amd64,x86-64,')
+      for interp in "ld-linux-${ld_arch}.so.?" "ld64.so.?" "/dev/null"; do
+          if [ -e ${interp_prefix}/${interp} ]; then
+              break
+          fi
+      done
+      if [ $interp = /dev/null ]; then
+          echo "Unable to determine name of shared library interpreter."
+          exit 1
+      fi
+
+      for binary in \
+        $(find . -exec file {} \; | awk -F\: '/ELF.*dynamic/{print$1}'); do
+          patchelf \
+              --force-rpath \
+              --set-rpath /snap/core22/current/usr/lib/$CRAFT_ARCH_TRIPLET:/snap/$CRAFT_PROJECT_NAME/current/lib:/snap/$CRAFT_PROJECT_NAME/current/lib/$SNAPCRAFT_ARCH_TRIPLET:/snap/$CRAFT_PROJECT_NAME/current/usr/lib:/snap/$CRAFT_PROJECT_NAME/current/usr/lib/$SNAPCRAFT_ARCH_TRIPLET \
+              $binary
+
+          patchelf --set-interpreter $interp_prefix/$interp $binary || true
+      done
