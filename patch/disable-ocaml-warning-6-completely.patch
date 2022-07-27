@@ -1,0 +1,46 @@
+From 1941593585574849dd72c458535cd80b4d858266 Mon Sep 17 00:00:00 2001
+From: "Richard W.M. Jones" <rjones@redhat.com>
+Date: Fri, 10 Dec 2021 10:20:34 +0000
+Subject: [PATCH] Disable OCaml warning 6 completely
+
+Warning 6 "labels-omitted" is not useful.  It's fine to omit labels on
+positional arguments.
+
+Example:
+
+  File "perl_edit.ml", line 30, characters 2-13:
+  30 |   c_edit_file (verbose ()) g (Guestfs.c_pointer g) file expr
+         ^^^^^^^^^^^
+  Warning 6 [labels-omitted]: label verbose was omitted in the application of this function.
+
+The function is specified as:
+
+  external c_edit_file : verbose:bool -> Guestfs.t -> int64 -> string -> string -> unit
+
+The complaint is that the verbose: label has been omitted from the
+first argument when the function is called, but IMO this is a
+stylistic thing, not a bug.
+
+(cherry picked from
+guestfs-tools commit 577f7aee4b1c720f4c4826115b49a0c3870b149e)
+---
+ m4/guestfs-ocaml.m4 | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Origin: backport, https://github.com/rwmjones/guestfs-tools/commit/577f7aee4b1c720f4c4826115b49a0c3870b149e
+Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1004748
+Reviewed-By: Sergio Durigan Junior <sergiodj@ubuntu.com>
+
+Index: guestfs-tools-1.46.1/m4/guestfs-ocaml.m4
+===================================================================
+--- guestfs-tools-1.46.1.orig/m4/guestfs-ocaml.m4	2022-02-03 13:55:05.228382382 -0500
++++ guestfs-tools-1.46.1/m4/guestfs-ocaml.m4	2022-02-03 13:56:04.172062831 -0500
+@@ -166,7 +166,7 @@
+ ])
+ 
+ dnl Flags we want to pass to every OCaml compiler call.
+-OCAML_WARN_ERROR="-warn-error CDEFLMPSUVYZX+52-3"
++OCAML_WARN_ERROR="-warn-error +C+D+E+F+L+M+P+S+U+V+Y+Z+X+52-3-6 -w -6"
+ AC_SUBST([OCAML_WARN_ERROR])
+ OCAML_FLAGS="-g -annot $safe_string_option"
+ AC_SUBST([OCAML_FLAGS])

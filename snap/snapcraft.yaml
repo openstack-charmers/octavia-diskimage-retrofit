@@ -471,13 +471,6 @@ parts:
     source-type: git
     source-tag: debian/1.46.1-4
     plugin: autotools
-    override-pull: |
-      sed -ie 's/^# deb-src/deb-src/' /etc/apt/sources.list; apt -y update
-      mkdir _tmp && cd _tmp
-      apt source guestfs-tools
-      mv guestfs-tools-*/* ..
-      cd ..
-      rm -rf _tmp
     build-environment:
       - OCAMLPATH: $CRAFT_STAGE/usr/lib/ocaml
       - PYTHON: /snap/$CRAFT_PROJECT_NAME/current/usr/bin/python3
@@ -485,6 +478,7 @@ parts:
       - QEMU: /snap/$CRAFT_PROJECT_NAME/current/usr/bin/qemu-system-$QEMU_CPU
     override-build: |
       patch -p1 < $CRAFT_PROJECT_DIR/patch/patch-libguestfs-dib-feature-modify-image.patch
+      patch -p1 < $CRAFT_PROJECT_DIR/patch/disable-ocaml-warning-6-completely.patch
       rm -rf /snap/$CRAFT_PROJECT_NAME
       mkdir -p /snap/$CRAFT_PROJECT_NAME
       ln -sf $CRAFT_STAGE /snap/$CRAFT_PROJECT_NAME/current
