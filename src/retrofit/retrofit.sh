@@ -1,4 +1,4 @@
-#!%%INTERPRETER%%
+#!/usr/bin/bash
 
 set -e
 

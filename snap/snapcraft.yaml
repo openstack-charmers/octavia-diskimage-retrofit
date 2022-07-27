@@ -11,6 +11,7 @@ architectures:
   - build-on: amd64
   - build-on: arm64
   - build-on: ppc64el
+  - build-on: s390x
 
 environment:
   # To enable execution of binaries from snap, and the host operating system,
@@ -31,7 +32,6 @@ environment:
   TMPDIR: $SNAP_COMMON/tmp
   PYTHONHOME: $SNAP
   PYTHONPATH: $SNAP/usr/lib/python3/dist-packages:$SNAP/usr/lib/python3.10/site-packages:$SNAP/usr/lib/python3.10:$SNAP/usr/lib/python3.10/lib-dynload
-  SHELL: /snap/octavia-diskimage-retrofit/current/bin/sh
 apps:
   octavia-diskimage-retrofit:
     command: bin/retrofit.sh
@@ -45,26 +45,14 @@ parts:
     source: src/retrofit
     override-stage: |
       craftctl default
-      sed -ie "s,%%INTERPRETER%%,/snap/$CRAFT_PROJECT_NAME/current/bin/bash," \
-          bin/retrofit.sh
       craftctl set version=$(git -C $CRAFT_PROJECT_DIR describe --always | sed -e 's/-/+git/;y/-/./' | sed -s 's/^v//')
     organize:
       retrofit.sh: bin/retrofit.sh
-    # These binaries are shipped with the base snap, but we can't use those
-    # because we need to do without the LD_LIBRARY_PATH.  See full explanation
-    # in the `environment` section.
-    stage-packages:
-      - bash
-      - coreutils
   local-elements:
     plugin: dump
     source: src
     organize: 
       elements/*: usr/local/lib/elements/
-    override-stage: |
-      find $CRAFT_PART_INSTALL/usr/local/lib/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*bash$/#\!\/usr\/bin\/env bash/'
-      find $CRAFT_PART_INSTALL/usr/local/lib/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*\/sh$/#\!\/usr\/bin\/env sh/'
-      craftctl default
   octavia-elements:
     plugin: dump
     source: https://opendev.org/openstack/octavia.git
@@ -75,10 +63,6 @@ parts:
       patch  -p1 < $CRAFT_PROJECT_DIR/patch/patch-octavia-elements-amphora-agent-ureadahead.patch
     organize:
       elements/*: usr/local/lib/elements/
-    override-stage: |
-      find $CRAFT_PART_INSTALL/usr/local/lib/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*bash$/#\!\/usr\/bin\/env bash/'
-      find $CRAFT_PART_INSTALL/usr/local/lib/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*\/sh$/#\!\/usr\/bin\/env sh/'
-      craftctl default
   diskimage-builder:
     # We do not use the Python plugin because in a classic snap we install a
     # complete Python environment and not just a venv.
@@ -92,8 +76,6 @@ parts:
       - PYTHONPATH: $CRAFT_PART_INSTALL/usr/lib/python3/dist-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10/site-packages:$CRAFT_PART_INSTALL/usr/lib/python3.10:$CRAFT_PART_INSTALL/usr/lib/python3.10/lib-dynload
     override-build: |
       patch -p1 < $CRAFT_PROJECT_DIR/patch/patch-diskimage-builder-manifests-fix-chown.patch
-      find diskimage_builder/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*bash$/#\!\/usr\/bin\/env bash/'
-      find diskimage_builder/elements/ -type f -print0 | xargs -0 sed -i '1 s/^#\!.*\/sh$/#\!\/usr\/bin\/env sh/'
 
       python3 setup.py build
       python3 setup.py install --prefix $CRAFT_PART_INSTALL/usr
@@ -212,7 +194,6 @@ parts:
       - libncurses-dev
       - libnuma-dev
       - libpixman-1-dev
-      - libpmem-dev
       - libpng-dev
       - libpulse-dev
       - librbd-dev
@@ -221,7 +202,6 @@ parts:
       - libsdl2-dev
       - libseccomp-dev
       - libslirp-dev
-      - libspice-server-dev
       - libssh-dev
       - libudev-dev
       - liburing-dev
@@ -229,7 +209,6 @@ parts:
       - libusbredirparser-dev
       - libvirglrenderer-dev
       - libvte-2.91-dev
-      - libxen-dev
       - libzstd-dev
       - meson
       - nettle-dev
@@ -243,14 +222,13 @@ parts:
       - zlib1g-dev
       - device-tree-compiler
       - fcode-utils
-      - gcc-alpha-linux-gnu
-      - gcc-hppa-linux-gnu
-      - gcc-powerpc64-linux-gnu
-      - gcc-riscv64-linux-gnu
-      - gcc-s390x-linux-gnu
-      - gcc-sparc64-linux-gnu
-      - libc6.1-dev-alpha-cross
       - xsltproc
+      - on amd64:
+        - libpmem-dev
+      - on arm64:
+        - libpmem-dev
+      - on ppc64el:
+        - libpmem-dev
     stage-packages:
       # Note that some stage-packages are omitted here because of collissions
       # with libguestfs part.
@@ -263,7 +241,6 @@ parts:
       - libpixman-1-0
       - libslang2
       - liburing2
-      - libpmem1
       - librdmacm1
       - libpixman-1-0
       - libcapstone4
@@ -271,6 +248,12 @@ parts:
       - libibverbs1
       - libslirp0
       - qemu-system-data
+      - on amd64:
+        - libpmem1
+      - on arm64:
+        - libpmem1
+      - on ppc64el:
+        - libpmem1
     organize:
       snap/$CRAFT_PROJECT_NAME/current/: /
   libguestfs:
@@ -283,7 +266,6 @@ parts:
       - PYTHON: /snap/$CRAFT_PROJECT_NAME/current/usr/bin/python3
       - QEMU_CPU: "$(dpkg-architecture -qDEB_HOST_GNU_CPU | sed -r -e 's,i[456]86,i386,' -e 's,sparc.*,sparc64,' -e 's,powerpc(64.*)?,ppc64,' -e 's,arm.*,arm,')"
       - QEMU: /snap/$CRAFT_PROJECT_NAME/current/usr/bin/qemu-system-$QEMU_CPU
-      - SHELL: /snap/octavia-diskimage-retrofit/current/bin/sh
     override-build: |
       rm -rf /snap/$CRAFT_PROJECT_NAME
       mkdir -p /snap/$CRAFT_PROJECT_NAME
@@ -291,11 +273,9 @@ parts:
       if [ ! -d /snap/$CRAFT_PROJECT_NAME/current/bin ]; then
           mkdir /snap/$CRAFT_PROJECT_NAME/current/bin
       fi
-      ln -sf /bin/dash /snap/$CRAFT_PROJECT_NAME/current/bin/sh
       dpkg-source --before-build .
       autoreconf
       craftctl default
-      rm -f /snap/$CRAFT_PROJECT_NAME/current/bin/sh
       rm -f /snap/$CRAFT_PROJECT_NAME/current
       rmdir /snap/$CRAFT_PROJECT_NAME
     override-prime: |
@@ -355,7 +335,6 @@ parts:
       - dosfstools
       - e2fsprogs
       - exfatprogs
-      - extlinux
       - f2fs-tools
       - fdisk
       - file
@@ -445,7 +424,6 @@ parts:
       - squashfs-tools
       - strace
       - supermin
-      - syslinux
       - systemd-sysv
       - systemtap-sdt-dev
       - udev
@@ -467,12 +445,6 @@ parts:
         - extlinux
       - on arm64:
         - linux-image-virtual
-      - on armhf:
-        - linux-image-generic
-      - on i386:
-        - linux-image-virtual
-        - syslinux
-        - extlinux
       - on ppc64el:
         - linux-image-virtual
       - on s390x:
@@ -498,7 +470,6 @@ parts:
       - dosfstools
       - e2fsprogs
       - exfatprogs
-      - extlinux
       - f2fs-tools
       - fdisk
       - file
@@ -551,7 +522,6 @@ parts:
       - sleuthkit
       - squashfs-tools
       - strace
-      - syslinux
       - systemd-sysv
       - tar
       - udev
@@ -584,7 +554,6 @@ parts:
       - PYTHON: /snap/$CRAFT_PROJECT_NAME/current/usr/bin/python3
       - QEMU_CPU: "$(dpkg-architecture -qDEB_HOST_GNU_CPU | sed -r -e 's,i[456]86,i386,' -e 's,sparc.*,sparc64,' -e 's,powerpc(64.*)?,ppc64,' -e 's,arm.*,arm,')"
       - QEMU: /snap/$CRAFT_PROJECT_NAME/current/usr/bin/qemu-system-$QEMU_CPU
-      - SHELL: /snap/octavia-diskimage-retrofit/current/bin/sh
     override-build: |
       patch -p1 < $CRAFT_PROJECT_DIR/patch/patch-libguestfs-dib-feature-modify-image.patch
       rm -rf /snap/$CRAFT_PROJECT_NAME
@@ -632,6 +601,12 @@ parts:
       - sqlite3
       - xorriso
       - xz-utils
+    # These binaries are shipped with the base snap, but we can't use those
+    # because we need to do without the LD_LIBRARY_PATH.  See full explanation
+    # in the `environment` section.
+    stage-packages:
+      - bash
+      - coreutils
   patchelf:
     after:
       - retrofit
@@ -657,7 +632,7 @@ parts:
       # /snap/core22/current/lib/powerpc64le-linux-gnu/ld64.so.2
       # /snap/core22/current/lib/s390x-linux-gnu/ld64.so.1
       interp_prefix=/snap/core22/current/lib/$CRAFT_ARCH_TRIPLET
-      ld_arch=$(echo $CRAFT_TARGET_ARCH | sed -e 's,amd64,x86-64,')
+      ld_arch=$(echo $CRAFT_TARGET_ARCH | sed -e 's,amd64,x86-64,' -e 's,arm64,aarch64,')
       for interp in "ld-linux-${ld_arch}.so.?" "ld64.so.?" "/dev/null"; do
           if [ -e ${interp_prefix}/${interp} ]; then
               break
