@@ -1,0 +1,20 @@
+diff --git a/appliance/init b/appliance/init
+index 7076821d2..438ccb411 100755
+--- a/appliance/init
++++ b/appliance/init
+@@ -125,6 +125,15 @@ if test "$guestfs_network" = 1; then
+     else
+         dhcpcd $iface
+     fi
++
++    # Start chrony to ensure timesync on ARM
++    echo "_chrony:x:113:119:Chrony daemon,,,:/var/lib/chrony:/usr/sbin/nologin" >> /etc/passwd
++    echo "_chrony:*:19200:0:99999:7:::" >> /etc/shadow
++    echo "_chrony:x:119:" >> /etc/group
++    /usr/sbin/chronyd -F -1 -f /usr/share/chrony/chrony.conf
++    /usr/bin/chronyc sources
++    /usr/bin/chronyc waitsync
++    killall chronyd
+ fi
+ 
+ # Scan for MDs but don't run arrays unless all expected drives are present

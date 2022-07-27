@@ -274,6 +274,7 @@ parts:
           mkdir /snap/$CRAFT_PROJECT_NAME/current/bin
       fi
       dpkg-source --before-build .
+      patch -p1 < $CRAFT_PROJECT_DIR/patch/patch-libguestfs-appliance-init-chrony.patch
       autoreconf
       craftctl default
       rm -f /snap/$CRAFT_PROJECT_NAME/current
@@ -309,6 +310,7 @@ parts:
       - --disable-erlang
       - --disable-ruby
       - --without-libvirt
+      - --with-extra-packages="chrony"
       - --prefix=/usr
     build-packages:
       - genisoimage
@@ -439,6 +441,7 @@ parts:
       - libvirt-ocaml-dev
       - ocaml-findlib
       - ocaml-nox
+      - chrony
       - on amd64:
         - linux-image-virtual
         - syslinux
