@@ -12,6 +12,19 @@ architectures:
   - build-on: arm64
   - build-on: ppc64el
   - build-on: s390x
+package-repositories:
+  - type: apt
+    formats: [deb, deb-src]
+    components: [main, universe]
+    suites: [jammy, jammy-updates]
+    url: http://archive.ubuntu.com/ubuntu
+    key-id: F6ECB3762474EDA9D21B7022871920D1991BC93C
+  - type: apt
+    formats: [deb, deb-src]
+    components: [main, universe]
+    suites: [jammy-security]
+    url: http://security.ubuntu.com/ubuntu
+    key-id: F6ECB3762474EDA9D21B7022871920D1991BC93C
 
 environment:
   # To enable execution of binaries from snap, and the host operating system,
@@ -472,7 +485,6 @@ parts:
     source-tag: debian/1.46.1-4
     plugin: autotools
     override-pull: |
-      sed -ie 's/^# deb-src/deb-src/' /etc/apt/sources.list; apt -y update
       mkdir _tmp && cd _tmp
       apt source guestfs-tools
       mv guestfs-tools-*/* ..
