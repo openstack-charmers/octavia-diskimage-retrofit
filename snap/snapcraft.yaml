@@ -35,10 +35,6 @@ environment:
 apps:
   octavia-diskimage-retrofit:
     command: bin/retrofit.sh
-    plugs:
-      - fuse-support
-      - kvm
-      - network-bind
 parts:
   retrofit:
     plugin: dump
