@@ -313,6 +313,9 @@ parts:
       - --with-extra-packages="chrony"
       - --prefix=/usr
     build-packages:
+      # The build process for the guestfs appliance involves copying binaries
+      # from packages installed on the build machine.  As a consequence this
+      # part has many system management packages listed as build packages.
       - genisoimage
       - acl
       - attr
@@ -457,83 +460,6 @@ parts:
       - libmagic1
       - uuid-runtime
       - libjansson4
-      - acl
-      - attr
-      - binutils
-      - bsdextrautils
-      - bsdmainutils
-      - btrfs-progs
-      - bzip2
-      - cpio
-      - cryptsetup-bin
-      - curl
-      - dash
-      - debootstrap
-      - diffutils
-      - dosfstools
-      - e2fsprogs
-      - exfatprogs
-      - f2fs-tools
-      - fdisk
-      - file
-      - findutils
-      - gawk
-      - gdisk
-      - gfs2-utils
-      - grep
-      - gzip
-      - hfsplus
-      - iproute2
-      - iputils-arping
-      - iputils-ping
-      - iputils-tracepath
-      - jfsutils
-      - kmod
-      - kpartx
-      - ldmtool
-      - less
-      - libacl1
-      - libaugeas0
-      - libc-bin
-      - libc6
-      - libcap2
-      - libhivex0
-      - libjansson4
-      - libpcre2-8-0
-      - librpm9
-      - libselinux1
-      - libsystemd0
-      - libtirpc3
-      - libtsk19
-      - libyara8
-      - lsof
-      - lsscsi
-      - lzop
-      - mdadm
-      - mount
-      - mtools
-      - nilfs-tools
-      - openssh-client
-      - parted
-      - pciutils
-      - procps
-      - psmisc
-      - reiserfsprogs
-      - rsync
-      - scrub
-      - sed
-      - sleuthkit
-      - squashfs-tools
-      - strace
-      - systemd-sysv
-      - tar
-      - udev
-      - util-linux
-      - uuid-runtime
-      - vim-tiny
-      - xfsprogs
-      - xz-utils
-      - zerofree
       - libfuse2
       - libfuse3-3
       - fuse3
@@ -604,12 +530,21 @@ parts:
       - sqlite3
       - xorriso
       - xz-utils
-    # These binaries are shipped with the base snap, but we can't use those
-    # because we need to do without the LD_LIBRARY_PATH.  See full explanation
-    # in the `environment` section.
     stage-packages:
+      # For use by the virt-dib command.  Diskimage-builder elements will be
+      # executing these tools while processing the image.
+      #
+      # These binaries are shipped with the base snap, but we can't use those
+      # because we need to do without the LD_LIBRARY_PATH.  See full explanation
+      # in the `environment` section.
       - bash
       - coreutils
+      - tar
+      - gawk
+      - gzip
+      - findutils
+      - grep
+      - util-linux
   patchelf:
     after:
       - retrofit
