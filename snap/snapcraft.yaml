@@ -253,7 +253,7 @@ parts:
     organize:
       snap/$CRAFT_PROJECT_NAME/current/: /
   libguestfs:
-    after: [diskimage-builder,qemu]
+    after: [qemu]
     source: https://git.launchpad.net/ubuntu/+source/libguestfs
     source-type: git
     source-tag: ubuntu/jammy
