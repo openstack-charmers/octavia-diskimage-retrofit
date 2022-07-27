@@ -13,7 +13,7 @@ $NAME: input output [-dhr] [-u Ubuntu Cloud Archive pocket] [-O output format]
     -h    Dislay help/usage
     -m    Specify Ubuntu mirror (e.g. 'deb http://archive.ubuntu.com/ubuntu bionic main')
     -r    Do not resize image before retrofitting
-    -u    Specify Ubuntu Cloud Archive pocket (e.g. 'stein')
+    -u    Specify Ubuntu Cloud Archive pocket (e.g. 'yoga')
     -p    Specify PPA to add to image
     -O    Specify output format (default: 'qcow2')
 EOF
@@ -65,7 +65,7 @@ fi
 
 # Set defaults
 DIB_UBUNTU_MIRROR=${DIB_UBUNTU_MIRROR:-""}
-DIB_UBUNTU_CLOUD_ARCHIVE=${DIB_UBUNTU_CLOUD_ARCHIVE:-stein}
+DIB_UBUNTU_CLOUD_ARCHIVE=${DIB_UBUNTU_CLOUD_ARCHIVE:-yoga}
 DIB_UBUNTU_CLOUD_ARCHIVE_MIRROR=${DIB_UBUNTU_CLOUD_ARCHIVE_MIRROR:-""}
 DIB_UBUNTU_PPA=${DIB_UBUNTU_PPA:-""}
 DIB_OCTAVIA_AMP_USE_NFTABLES=${DIB_OCTAVIA_AMP_USE_NFTABLES:-False}
@@ -98,6 +98,7 @@ virt-dib ${DEBUG} \
     --envvar DIB_UBUNTU_PPA=$DIB_UBUNTU_PPA \
     --envvar DIB_OCTAVIA_AMP_USE_NFTABLES=$DIB_OCTAVIA_AMP_USE_NFTABLES \
     --envvar http_proxy="${http_proxy}" \
+    --envvar DIB_INIT_SYSTEM=systemd \
     --python $SNAP/usr/bin/python3 \
     --install-type package \
     --extra-packages initramfs-tools \

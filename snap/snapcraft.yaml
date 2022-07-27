@@ -51,12 +51,9 @@ parts:
       elements/*: usr/local/lib/elements/
   octavia-elements:
     plugin: dump
-    source: https://opendev.org/openstack/octavia.git
+    source: https://git.launchpad.net/~ubuntu-openstack-dev/ubuntu/+source/octavia
     source-type: git
-    source-branch: stable/wallaby
-    override-pull: |
-      craftctl default
-      patch  -p1 < $CRAFT_PROJECT_DIR/patch/patch-octavia-elements-amphora-agent-ureadahead.patch
+    source-branch: stable/yoga
     organize:
       elements/*: usr/local/lib/elements/
     stage:
@@ -67,9 +64,9 @@ parts:
     # We do not use the Python plugin because in a classic snap we install a
     # complete Python environment and not just a venv.
     plugin: dump
-    source: https://opendev.org/openstack/diskimage-builder.git
+    source: https://git.launchpad.net/~ubuntu-openstack-dev/ubuntu/+source/python-diskimage-builder
     source-type: git
-    source-branch: 2.25.0
+    source-branch: stable/yoga
     build-environment:
       - PATH: $CRAFT_PART_INSTALL/usr/bin:$PATH
       - PYTHONHOME: $CRAFT_PART_INSTALL
@@ -82,7 +79,8 @@ parts:
 
       # No need to run the dump plugins default build step
     override-stage: |
-      find $CRAFT_PART_INSTALL -type f -print0 | xargs -0 sed -i '1 s/^#\!.*python/#\!\/usr\/bin\/env python3/'
+      find $CRAFT_PART_INSTALL -type f -print0 | xargs -0 sed -i '1 s/^#\!.*python$/#\!\/usr\/bin\/env python3/'
+      find $CRAFT_PART_INSTALL -type f -print0 | xargs -0 sed -i '1 s/^#\!.*python3$/#\!\/usr\/bin\/env python3/'
       craftctl default
     stage-packages:
       - libpython3.10
