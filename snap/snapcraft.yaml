@@ -59,6 +59,10 @@ parts:
       patch  -p1 < $CRAFT_PROJECT_DIR/patch/patch-octavia-elements-amphora-agent-ureadahead.patch
     organize:
       elements/*: usr/local/lib/elements/
+    stage:
+      # The Ubuntu Jammy Octavia package does not have a binary package for
+      # the new prometheus-proxy daemon (LP: #1982969).
+      - -usr/local/lib/elements/amphora-agent/post-install.d/12-enable-prometheus-proxy-systemd
   diskimage-builder:
     # We do not use the Python plugin because in a classic snap we install a
     # complete Python environment and not just a venv.
