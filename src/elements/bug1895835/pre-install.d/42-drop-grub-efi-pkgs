@@ -2,11 +2,13 @@
 
 set -e
 
-# Remove EFI packages to work around LP: #1895835
-echo "Removing GRUB EFI packages to work around LP: #1895835..."
-DEBIAN_FRONTEND=noninteractive apt-get remove \
-    --allow-remove-essential \
-    --ignore-missing \
-    --purge \
-    -y \
-    grub-efi-amd64-bin grub-efi-amd64-signed
+if [ "$DIB_RELEASE"x != jammyx ]; then
+    # Remove EFI packages to work around LP: #1895835
+    echo "Removing GRUB EFI packages to work around LP: #1895835..."
+    DEBIAN_FRONTEND=noninteractive apt-get remove \
+        --allow-remove-essential \
+        --ignore-missing \
+        --purge \
+        -y \
+        grub-efi-amd64-bin grub-efi-amd64-signed
+fi
