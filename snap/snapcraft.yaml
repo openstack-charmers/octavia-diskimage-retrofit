@@ -54,7 +54,7 @@ parts:
     source: src/retrofit
     override-stage: |
       craftctl default
-      craftctl set version=$(git -C $CRAFT_PROJECT_DIR describe --always | sed -e 's/-/+git/;y/-/./' | sed -s 's/^v//')
+      craftctl set version=$(git -C $CRAFT_PROJECT_DIR describe --always --dirty --tags | sed -e 's/-/+git/;y/-/./' | sed -s 's/^v//')
     organize:
       retrofit.sh: bin/retrofit.sh
   local-elements:
