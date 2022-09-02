@@ -1,3 +1,0 @@
-# The Octavia ``certs-ramfs`` element requires kernel modules that are
-# not available in the linux-image-virtual package at the moment
-linux-generic:
