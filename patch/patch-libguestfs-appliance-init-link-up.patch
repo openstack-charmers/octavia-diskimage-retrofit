@@ -1,0 +1,14 @@
+diff --git a/appliance/init b/appliance/init
+index 438ccb411..26be77345 100755
+--- a/appliance/init
++++ b/appliance/init
+@@ -120,6 +120,9 @@ if test "$guestfs_network" = 1; then
+     # Two workarounds for Ubuntu:
+     touch /etc/fstab
+     rm -f /etc/dhcp/dhclient-enter-hooks.d/resolved
++    rm -f /etc/dhcp/dhclient-enter-hooks.d/resolved-enter
++    rm -f /etc/dhcp/dhclient-exit-hooks.d/resolved
++    ip link set up dev $iface
+     if dhclient --version >/dev/null 2>&1; then
+         dhclient $iface
+     else

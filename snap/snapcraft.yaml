@@ -286,6 +286,7 @@ parts:
       fi
       dpkg-source --before-build .
       patch -p1 < $CRAFT_PROJECT_DIR/patch/patch-libguestfs-appliance-init-chrony.patch
+      patch -p1 < $CRAFT_PROJECT_DIR/patch/patch-libguestfs-appliance-init-link-up.patch
       autoreconf
       craftctl default
       rm -f /snap/$CRAFT_PROJECT_NAME/current
