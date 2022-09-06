@@ -116,7 +116,7 @@ parts:
   qemu:
     source: https://git.launchpad.net/ubuntu/+source/qemu
     source-type: git
-    source-branch: ubuntu/jammy
+    source-branch: ubuntu/jammy-updates
     plugin: autotools
     override-build: |
       dpkg-source --before-build .
