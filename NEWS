@@ -1,0 +1,17 @@
+octavia-diskimage-retrofit v1.0.0 - 06 Sep 2022
+-----------------------------------------------
+
+  - patch/libguestfs: Handle new dhclient behavior and ensure link up.
+  - snap/qemu: Use jammy-updates as source repository.
+  - elements: Drop install of generic kernel.
+  - Fix resize option (LP: #1925777).
+  - Enable use of Jammy as Amphora.
+  - retrofit: Populate HOME environment for virt-dib.
+  - Fix snap version generation.
+  - snap/snapcraft.yaml: Update source for OpenStack components to stable/yoga.
+  - octavia-elements: Skip Octavia prometheus-proxy script (LP: #1982969).
+  - snap/snapcraft.yaml: Handle libguestfs / guestfs-tools split.
+  - Fix timesync issue for guestfs appliance on ARM (LP: #1925776).
+  - Drop builds for i386.
+  - Enable classic confinement.
+  - Change base to core22.
