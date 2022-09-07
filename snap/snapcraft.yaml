@@ -2,6 +2,7 @@ name: octavia-diskimage-retrofit
 icon: src/icon.svg
 adopt-info: retrofit
 grade: stable
+license: AGPL-3.0-only OR Apache-2.0 OR GPL-2.0 OR LGPL-2.1
 summary: Turn stock cloud image into Octavia Amphora image
 description: |
   The purpose of this tool is to take a stock Ubuntu Cloud Image,
@@ -10,14 +11,15 @@ description: |
   amphora.
 
   Example Usage:
-    sudo snap install --classic octavia-diskimage-retrofit
-    cd /var/snap/octavia-diskimage-retrofit/common/tmp
-    wget https://cloud-images.ubuntu.com/releases/focal/release/ubuntu-20.04-server-cloudimg-amd64.img
-    sudo octavia-diskimage-retrofit \
-        ubuntu-20.04-server-cloudimg-amd64.img \
-        ubuntu-amphora-haproxy-amd64.qcow2
 
-  **NOTE** The tool will use KVM acceleration when available
+      sudo snap install --classic octavia-diskimage-retrofit
+      cd /var/snap/octavia-diskimage-retrofit/common/tmp
+      wget https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+      sudo octavia-diskimage-retrofit \
+          jammy-server-cloudimg-amd64.img \
+          ubuntu-amphora-haproxy-amd64.qcow2
+
+  **NOTE** The tool will use KVM acceleration when available.
 confinement: classic
 base: core22
 architectures:
