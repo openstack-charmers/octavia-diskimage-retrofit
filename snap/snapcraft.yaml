@@ -285,7 +285,9 @@ parts:
           mkdir /snap/$CRAFT_PROJECT_NAME/current/bin
       fi
       dpkg-source --before-build .
-      patch -p1 < $CRAFT_PROJECT_DIR/patch/patch-libguestfs-appliance-init-chrony.patch
+      if echo $CRAFT_TARGET_ARCH | grep -q ^arm; then
+          patch -p1 < $CRAFT_PROJECT_DIR/patch/patch-libguestfs-appliance-init-chrony.patch
+      fi
       patch -p1 < $CRAFT_PROJECT_DIR/patch/patch-libguestfs-appliance-init-link-up.patch
       autoreconf
       craftctl default
