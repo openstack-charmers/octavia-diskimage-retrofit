@@ -2,13 +2,17 @@
 
 set -e
 
-if [ "$DIB_RELEASE"x != jammyx ]; then
-    # Remove EFI packages to work around LP: #1895835
-    echo "Removing GRUB EFI packages to work around LP: #1895835..."
-    DEBIAN_FRONTEND=noninteractive apt-get remove \
-        --allow-remove-essential \
-        --ignore-missing \
-        --purge \
-        -y \
-        grub-efi-amd64-bin grub-efi-amd64-signed
-fi
+case $DIB_RELEASE in
+    bionic|focal) PKG_RM="grub-efi-amd64-bin grub-efi-amd64-signed";;
+    *) PKG_RM="grub-efi-amd64-bin grub-efi-amd64-signed shim-signed";;
+esac
+
+# Remove EFI packages to work around LP: #1895835
+echo "Removing GRUB EFI packages $PKG_RM"
+echo "to work around LP: #1895835..."
+DEBIAN_FRONTEND=noninteractive apt-get remove \
+    --allow-remove-essential \
+    --ignore-missing \
+    --purge \
+    -y \
+    $PKG_RM
