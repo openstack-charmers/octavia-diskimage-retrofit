@@ -1,8 +1,0 @@
-#!/bin/bash
-
-# Add the Ubuntu mirror
-
-if [ ! -z "${DIB_UBUNTU_MIRROR}" ]; then
-    add-apt-repository "$DIB_UBUNTU_MIRROR"
-    apt-get update
-fi
