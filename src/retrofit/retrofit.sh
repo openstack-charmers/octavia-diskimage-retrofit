@@ -6,12 +6,12 @@ NAME=$(basename $0)
 
 usage() {
     >&2 cat <<EOF
-$NAME: input output [-dhr] [-u Ubuntu Cloud Archive pocket] [-O output format]
+$NAME: [-dhr] [-u Ubuntu Cloud Archive pocket] [-O output format] input output
 
     -c    Specify Ubuntu Cloud Archive mirror (e.g. 'deb http://ppa.launchpad.net/ubuntu-cloud-archive/stein/ubuntu bionic main')
     -d    Enable verbose debugging output
     -h    Dislay help/usage
-    -m    Specify Ubuntu mirror (e.g. 'deb http://archive.ubuntu.com/ubuntu bionic main')
+    -m    Specify Ubuntu mirror (e.g. 'deb http://example.com/ubuntu jammy main universe\ndeb http://example.com/ubuntu jammy-security main universe\ndeb http://example.com/ubuntu jammy-updates main universe')
     -r    Do not resize image before retrofitting
     -u    Specify Ubuntu Cloud Archive pocket (e.g. 'yoga')
     -p    Specify PPA to add to image

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Add the Ubuntu mirror
+
+if [ ! -z "${DIB_UBUNTU_MIRROR}" ]; then
+    # disable the default set of archive servers
+    sed -i -e 's/^/# /' /etc/apt/sources.list
+
+    # DIB_UBUNTU_MIRROR may contain '\n' in the middle since multiple
+    # pockets are necessary to install packages properly
+    printf '%b\n' "$DIB_UBUNTU_MIRROR" >> /etc/apt/sources.list
+    apt-get update
+fi
