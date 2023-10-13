@@ -118,12 +118,14 @@ parts:
     source-type: git
     source-branch: ubuntu/jammy-updates
     plugin: autotools
+    build-attributes:
+      - enable-patchelf
     override-build: |
       dpkg-source --before-build .
       rm -rf build && mkdir build && cd build
       ../configure \
           --extra-cflags='-g -O2 -fdebug-prefix-map=/home/ubuntu/qemu-2.11+dfsg=. -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -DVENDOR_UBUNTU' \
-          --extra-ldflags='-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,--as-needed' \
+          --extra-ldflags='-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,--as-needed -Wl,-dynamic-linker=/snap/core22/current/lib64/ld-linux-x86-64.so.2 -Wl,-rpath=/snap/core22/current/lib/x86_64-linux-gnu' \
           --prefix=/snap/$CRAFT_PROJECT_NAME/current/usr \
           --bindir=bin \
           --libdir=lib/$CRAFT_ARCH_TRIPLET \
@@ -273,6 +275,8 @@ parts:
     source-type: git
     source-tag: ubuntu/jammy
     plugin: autotools
+    build-attributes:
+      - enable-patchelf
     build-environment:
       - PYTHON: /snap/$CRAFT_PROJECT_NAME/current/usr/bin/python3
       - QEMU_CPU: "$(dpkg-architecture -qDEB_HOST_GNU_CPU | sed -r -e 's,i[456]86,i386,' -e 's,sparc.*,sparc64,' -e 's,powerpc(64.*)?,ppc64,' -e 's,arm.*,arm,')"
@@ -485,6 +489,8 @@ parts:
     source-type: git
     source-tag: debian/1.46.1-4
     plugin: autotools
+    build-attributes:
+      - enable-patchelf
     build-environment:
       - OCAMLPATH: $CRAFT_STAGE/usr/lib/ocaml
       - PYTHON: /snap/$CRAFT_PROJECT_NAME/current/usr/bin/python3
@@ -553,48 +559,7 @@ parts:
       - findutils
       - grep
       - util-linux
-  patchelf:
-    after:
-      - retrofit
-      - local-elements
-      - octavia-elements
-      - diskimage-builder
-      - qemu
-      - libguestfs
-      - guestfs-tools
-    plugin: nil
-    build-packages:
-      - patchelf
-    override-prime: |
-      # patchelf
-      #
-      # To allow for a classic snap that works across multiple operating system
-      # runtime environments, we need to ensure all shipped binaries consume
-      # libraries from the core or shipped snap.  We accomplish this by
-      # patching RPATH or interpreter into dynamically linked binaries.
-      #
-      # /snap/core22/current/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
-      # /snap/core22/current/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1
-      # /snap/core22/current/lib/powerpc64le-linux-gnu/ld64.so.2
-      # /snap/core22/current/lib/s390x-linux-gnu/ld64.so.1
-      interp_prefix=/snap/core22/current/lib/$CRAFT_ARCH_TRIPLET
-      ld_arch=$(echo $CRAFT_TARGET_ARCH | sed -e 's,amd64,x86-64,' -e 's,arm64,aarch64,')
-      for interp in "ld-linux-${ld_arch}.so.?" "ld64.so.?" "/dev/null"; do
-          if [ -e ${interp_prefix}/${interp} ]; then
-              break
-          fi
-      done
-      if [ $interp = /dev/null ]; then
-          echo "Unable to determine name of shared library interpreter."
-          exit 1
-      fi
-
-      for binary in \
-        $(find . -exec file {} \; | awk -F\: '/ELF.*dynamic/{print$1}'); do
-          patchelf \
-              --force-rpath \
-              --set-rpath /snap/core22/current/usr/lib/$CRAFT_ARCH_TRIPLET:/snap/$CRAFT_PROJECT_NAME/current/lib:/snap/$CRAFT_PROJECT_NAME/current/lib/$SNAPCRAFT_ARCH_TRIPLET:/snap/$CRAFT_PROJECT_NAME/current/usr/lib:/snap/$CRAFT_PROJECT_NAME/current/usr/lib/$SNAPCRAFT_ARCH_TRIPLET \
-              $binary
-
-          patchelf --set-interpreter $interp_prefix/$interp $binary || true
-      done
+      - libicu70
+      - libxml2
+      - libc-bin
+      - lsb-release
