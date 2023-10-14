@@ -107,7 +107,7 @@ HOME=${SNAP_COMMON} virt-dib ${DEBUG} \
     ubuntu-cloud-archive ubuntu-networking ubuntu-ppa \
     haproxy-octavia rebind-sshd no-resolvconf amphora-agent \
     sos keepalived-octavia ipvsadmin pip-cache certs-ramfs \
-    ubuntu-amphora-agent tuning bug1895835
+    ubuntu-amphora-agent tuning bug1895835 prometheus-proxy
 
 virt-sysprep -a $TEMP_IMAGE_FILE \
     --operations tmp-files,customize \
