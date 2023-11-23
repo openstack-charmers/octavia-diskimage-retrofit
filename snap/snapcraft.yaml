@@ -166,7 +166,23 @@ parts:
           --with-git-submodules=ignore
           make -j${CRAFT_PARALLEL_BUILD_COUNT}
           make install DESTDIR=${CRAFT_PART_INSTALL}
+    override-prime: |
+      patchelf \
+          --force-rpath \
+          --set-rpath '$ORIGIN/../lib/$SNAPCRAFT_ARCH_TRIPLET:$ORIGIN/../../lib/$SNAPCRAFT_ARCH_TRIPLET:/snap/core22/current/lib/$SNAPCRAFT_ARCH_TRIPLET' \
+          $CRAFT_PART_INSTALL/usr/bin/qemu-img
+
+      patchelf \
+          --set-interpreter /snap/core22/current/lib/ld-linux-$(echo $SNAPCRAFT_ARCH_TRIPLET | cut -d'-' -f1 | sed s/_/-/g).so.1 \
+          $CRAFT_PART_INSTALL/usr/bin/qemu-img
+
+      # for ITEM in $(ls /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpcre.so.3* /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libp11-kit.so.0* /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libidn2.so.0* /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libunistring.so.2* /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libtasn1.so.6* /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libnettle.so.8* /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libhogweed.so.6 libgmp.so.10* /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libffi.so.8*); do
+      #     cp -P $ITEM usr/lib/$SNAPCRAFT_ARCH_TRIPLET/
+      # done
+      craftctl default
+
     build-packages:
+      - patchelf
       - libaio-dev
       - acpica-tools
       - libattr1-dev
@@ -197,17 +213,22 @@ parts:
       - libdrm-dev
       - libepoxy-dev
       - libfdt-dev
+      - libffi-dev
       - libfuse3-dev
       - libgbm-dev
       - libglusterfs-dev
+      - libgmp-dev
       - libgtk-3-dev
       - libibumad-dev
       - libibverbs-dev
+      - libidn2-dev
       - libiscsi-dev
       - libjack-dev
       - libjpeg-dev
       - libncurses-dev
       - libnuma-dev
+      - libp11-kit-dev
+      - libpcre2-dev
       - libpixman-1-dev
       - libpng-dev
       - libpulse-dev
@@ -220,6 +241,8 @@ parts:
       - libssh-dev
       - libudev-dev
       - liburing-dev
+      - libunistring-dev
+      - libtasn1-6-dev
       - libusb-1.0-0-dev
       - libusbredirparser-dev
       - libvirglrenderer-dev
@@ -253,15 +276,24 @@ parts:
       - libaio1
       - libcapstone4
       - libfdt1
+      - libffi8
+      - libgmp10
+      - libhogweed6
+      - libidn2-0
+      - libnettle8
       - libpixman-1-0
       - libslang2
+      - libunistring2
       - liburing2
+      - libp11-kit0
+      - libpcre3
       - librdmacm1
       - libpixman-1-0
       - libcapstone4
       - libfdt1
       - libibverbs1
       - libslirp0
+      - libtasn1-6
       - qemu-system-data
       - on amd64:
         - libpmem1
@@ -483,6 +515,14 @@ parts:
       - libfuse2
       - libfuse3-3
       - fuse3
+      - libffi8
+      - libgmp10
+      - libhogweed6
+      - libidn2-0
+      - libnettle8
+      - libunistring2
+      - libp11-kit0
+      - libtasn1-6
     stage:
       - -lib64
   guestfs-tools:
@@ -565,3 +605,4 @@ parts:
       - libxml2
       - libc-bin
       - lsb-release
+      - libpcre3
