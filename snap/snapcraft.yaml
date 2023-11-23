@@ -62,7 +62,7 @@ parts:
   local-elements:
     plugin: dump
     source: src
-    organize: 
+    organize:
       elements/*: usr/local/lib/elements/
   octavia-elements:
     plugin: dump
@@ -127,7 +127,7 @@ parts:
       rm -rf build && mkdir build && cd build
       ../configure \
           --extra-cflags='-g -O2 -fdebug-prefix-map=/home/ubuntu/qemu-2.11+dfsg=. -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -DVENDOR_UBUNTU' \
-          --extra-ldflags='-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,--as-needed -Wl,-dynamic-linker=/snap/core22/current/lib64/ld-linux-x86-64.so.2 -Wl,-rpath=/snap/core22/current/lib/x86_64-linux-gnu' \
+          --extra-ldflags='-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,--as-needed -Wl,-rpath=/snap/core22/current/lib/$CRAFT_ARCH_TRIPLET' \
           --prefix=/snap/$CRAFT_PROJECT_NAME/current/usr \
           --bindir=bin \
           --libdir=lib/$CRAFT_ARCH_TRIPLET \
