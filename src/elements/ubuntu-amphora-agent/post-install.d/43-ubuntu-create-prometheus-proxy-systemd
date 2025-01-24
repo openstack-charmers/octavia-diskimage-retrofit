@@ -1,0 +1,21 @@
+#!/bin/bash
+
+cat > /usr/lib/systemd/system/prometheus-proxy.service <<EOF
+[Unit]
+Description=OpenStack Octavia Prometheus Proxy
+After=network.target syslog.service amphora-agent.service
+Wants=amphora-agent.service
+
+[Service]
+ExecStart=/usr/bin/prometheus-proxy
+KillMode=mixed
+Restart=always
+ExecStartPost=/bin/sh -c "echo \$MAINPID > /var/run/prometheus-proxy.pid"
+PIDFile=/var/run/prometheus-proxy.pid
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable prometheus-proxy
