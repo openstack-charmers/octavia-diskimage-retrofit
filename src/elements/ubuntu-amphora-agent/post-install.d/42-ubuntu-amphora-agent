@@ -27,3 +27,5 @@ EOF
 # Let's retain a symlink so that the same Amphora can be used for multiple
 # versions.
 ln -sf lvs-masquerade.sh /usr/local/bin/udp-masquerade.sh
+
+chmod 755 /var/lib/octavia
