@@ -7,7 +7,19 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        runner:
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+        include:
+          - runner: ubuntu-24.04
+            arch: amd64
+            qemu-arch: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+            qemu-arch: aarch64
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,7 +32,7 @@ jobs:
       - name: Get the Ubuntu Noble Image
         run: |
           sudo wget --continue -O /var/snap/octavia-diskimage-retrofit/common/tmp/noble.img \
-              https://cloud-images.ubuntu.com/releases/noble/release/ubuntu-24.04-server-cloudimg-amd64.img
+              https://cloud-images.ubuntu.com/releases/noble/release/ubuntu-24.04-server-cloudimg-${{ matrix.arch }}.img
       - name: Retrofitting noble image
         run: |
           set -ex
@@ -31,8 +43,8 @@ jobs:
         run: |
           set -x
           sudo apt-get update -qq
-          sudo apt-get install -qy qemu-system-x86
-          sudo qemu-system-x86_64 \
+          sudo apt-get install -qy qemu-system-${{ matrix.qemu-arch }}
+          sudo qemu-system-${{ matrix.qemu-arch }} \
             -m 2G \
             -drive file=/var/snap/octavia-diskimage-retrofit/common/tmp/noble-amphora.qcow2,format=qcow2 \
             -chardev file,id=serial0,path=serial.log \
