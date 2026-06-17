@@ -7,11 +7,13 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - uses: snapcore/action-build@v1
+      - name: Build the snap
+        id: snapcraft
+        uses: snapcore/action-build@v1
       - name: Install the snap
         run: |
           sudo snap install --dangerous --classic ${{ steps.snapcraft.outputs.snap }}
@@ -21,26 +23,30 @@ jobs:
               https://cloud-images.ubuntu.com/releases/noble/release/ubuntu-24.04-server-cloudimg-amd64.img
       - name: Retrofitting noble image
         run: |
+          set -ex
           cd /var/snap/octavia-diskimage-retrofit/common/tmp
-          octavia-diskimage-retrofit -d noble.img noble-amphora.qcow2
+          sudo octavia-diskimage-retrofit -u caracal -O qcow2 -d noble.img noble-amphora.qcow2
 
       - name: Test if the image can be booted
         run: |
           set -x
-          qemu-system-x86_64 \
-              -m 2G \
-              -drive file=/var/snap/octavia-diskimage-retrofit/common/tmp/noble-amphora.qcow2,format=qcow2 \
-              -nographic \
-              -serial mon:stdio,logfile=serial.log \
-              -display none \
-              -device virtio-net-pci,netdev=net0 \
-              -netdev user,id=net0,hostfwd=tcp::2222-:22 \
-              -accel kvm &
+          sudo apt-get update -qq
+          sudo apt-get install -qy qemu-system-x86
+          sudo qemu-system-x86_64 \
+            -m 2G \
+            -drive file=/var/snap/octavia-diskimage-retrofit/common/tmp/noble-amphora.qcow2,format=qcow2 \
+            -chardev file,id=serial0,path=serial.log \
+            -serial chardev:serial0 \
+            -display none \
+            -device virtio-net-pci,netdev=net0 \
+            -netdev user,id=net0,hostfwd=tcp::2222-:22 \
+            -accel kvm &
 
           timeout 300 bash -c 'until nc -z localhost 2222; do echo -n .; sleep 5; done'
 
-          tail -n 5 serial.log
-          grep "login:" serial.log
+          # Waitfor up to 10m for the 'login:' string to show up in the console
+          timeout 10m bash -c 'until grep "login:" serial.log; do echo -n .; sleep 5;done'
+          tail -n 10 serial.log
 
       - name: Upload built snap artifact
         if: always()

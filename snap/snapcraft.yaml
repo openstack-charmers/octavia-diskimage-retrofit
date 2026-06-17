@@ -45,6 +45,7 @@ environment:
   PATH: $SNAP/usr/sbin:$SNAP/usr/bin:$SNAP/sbin:$SNAP/bin
   LIBGUESTFS_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/guestfs/appliance
   TMPDIR: $SNAP_COMMON/tmp
+  ARCH_TRIPLET: $CRAFT_ARCH_TRIPLET_BUILD_FOR
   PYTHONHOME: $SNAP
   PYTHONPATH: $SNAP/usr/local/lib/python3.12/dist-packages:$SNAP/usr/lib/python3/dist-packages:$SNAP/usr/lib/python3.12/site-packages:$SNAP/usr/lib/python3.12:$SNAP/usr/lib/python3.12/lib-dynload
 apps:
@@ -125,10 +126,15 @@ parts:
       - PYTHON: /usr/bin/python3
     override-build: |
       dpkg-source --before-build .
+      # Derive dynamic linker and rpath for the build host architecture so
+      # the configure sanity-check binary (and final binaries) use the correct
+      # interpreter on every supported platform (amd64, arm64, ppc64el, s390x).
+      DYNAMIC_LINKER=$(patchelf --print-interpreter /bin/sh | sed 's|^/lib|/snap/core24/current/lib|')
+      RPATH=/snap/core24/current/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}
       rm -rf build && mkdir build && cd build
       ../configure \
           --extra-cflags='-g -O2 -fdebug-prefix-map=/home/ubuntu/qemu-2.11+dfsg=. -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -DVENDOR_UBUNTU' \
-          --extra-ldflags='-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,--as-needed -Wl,-dynamic-linker=/snap/core24/current/lib64/ld-linux-x86-64.so.2 -Wl,-rpath=/snap/core24/current/lib/x86_64-linux-gnu' \
+          --extra-ldflags="-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,--as-needed -Wl,-dynamic-linker=${DYNAMIC_LINKER} -Wl,-rpath=${RPATH}" \
           --prefix=/snap/$CRAFT_PROJECT_NAME/current/usr \
           --bindir=bin \
           --libdir=lib/$CRAFT_ARCH_TRIPLET \
@@ -165,8 +171,8 @@ parts:
           make -j${CRAFT_PARALLEL_BUILD_COUNT}
           make install DESTDIR=${CRAFT_PART_INSTALL}
     build-packages:
+      - patchelf
       - libaio-dev
-      - acpica-tools
       - libattr1-dev
       - libcap-dev
       - libcap-ng-dev
@@ -228,6 +234,7 @@ parts:
       - python3
       - python3-sphinx
       - python3-sphinx-rtd-theme
+      - python3-venv
       - texinfo
       - uuid-dev
       - xfslibs-dev
@@ -236,10 +243,13 @@ parts:
       - fcode-utils
       - xsltproc
       - on amd64:
+        - acpica-tools
         - libpmem-dev
       - on arm64:
+        - acpica-tools
         - libpmem-dev
       - on ppc64el:
+        - acpica-tools
         - libpmem-dev
     stage-packages:
       # Note that some stage-packages are omitted here because of collissions
@@ -259,17 +269,39 @@ parts:
       - libfdt1
       - libibverbs1
       - libslirp0
+      - libcacard0
+      - libusbredirparser1t64
+      - libusb-1.0-0
       - libfuse3-3
       - libgbm1
       - libepoxy0
       - libvirglrenderer1
       - qemu-system-data
+      # Transitive dependencies of libgnutls to prevent library version mismatches
+      - libp11-kit0
+      - libidn2-0
+      - libunistring5
+      - libtasn1-6
+      - libnettle8
+      - libhogweed6
+      - libgmp10
+      - libcap2
+      - libselinux1
+      - libffi8
+      - libpcre2-8-0
+      - libblkid1
       - on amd64:
         - libpmem1
+        - libndctl6
+        - libdaxctl1
       - on arm64:
         - libpmem1
+        - libndctl6
+        - libdaxctl1
       - on ppc64el:
         - libpmem1
+        - libndctl6
+        - libdaxctl1
     organize:
       snap/$CRAFT_PROJECT_NAME/current/: /
   libguestfs:
@@ -556,6 +588,7 @@ parts:
       # These binaries are shipped with the base snap, but we can't use those
       # because we need to do without the LD_LIBRARY_PATH.  See full explanation
       # in the `environment` section.
+      - libfuse2t64
       - bash
       - coreutils
       - tar
